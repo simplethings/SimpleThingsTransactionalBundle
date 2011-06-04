@@ -1,0 +1,28 @@
+<?xml version="1.0" ?>
+
+<container xmlns="http://symfony.com/schema/dic/services"
+    xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+    xsi:schemaLocation="http://symfony.com/schema/dic/services http://symfony.com/schema/dic/services/services-1.0.xsd">
+
+    <parameters>
+        <parameter key="simple_things_transactional.manager.dbal.class">SimpleThings\TransactionalBundle\Transactions\Doctrine\DBALTransactionManager</parameter>
+        <parameter key="simple_things_transactional.manager.orm.class">SimpleThings\TransactionalBundle\Transactions\Doctrine\EntityManagerTransactionManager</parameter>
+        <parameter key="simple_things_transactional.manager.mongodb.class">SimpleThings\TransactionalBundle\Transactions\Doctrine\MongoDBTransactionManager</parameter>
+        <parameter key="simple_things_transactional.manager.couchdb.class">SimpleThings\TransactionalBundle\Transactions\Doctrine\CouchDBTransactionManager</parameter>
+        <parameter key="simple_things_transactional.controller_listener.class">SimpleThings\TransactionalBundle\ControllerListener</parameter>
+        <parameter key="controller_resolver.class">SimpleThings\TransactionalBundle\ControllerResolver</parameter>
+    </parameters>
+    
+    <services>
+        <service abstract="true" id="simple_things_transactional.manager.dbal" class="%simple_things_transactional.manager.dbal.class%" />
+        <service abstract="true" id="simple_things_transactional.manager.orm" class="%simple_things_transactional.manager.orm.class%" />
+        <service abstract="true" id="simple_things_transactional.manager.mongodb" class="%simple_things_transactional.manager.mongodb.class%" />
+        <service abstract="true" id="simple_things_transactional.manager.couchdb" class="%simple_things_transactional.manager.couchdb.class%" />
+        
+        <service id="simple_things_transactional.controller_listener" class="%simple_things_transactional.controller_listener.class%">
+            <argument type="service" id="service_container" />
+            <tag name="kernel.listener" event="core.controller" method="onCoreController" />
+        </service>
+    </services>
+        
+</container>
