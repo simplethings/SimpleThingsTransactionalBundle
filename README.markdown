@@ -4,37 +4,6 @@ Wraps calls to controllers into a transaction, be it Doctrine DBAL or Persistenc
 Configuration is done via routing parameters or through a list of controllers/actions configured in the
 extension config.
 
-## Installation
-
-1. Add TransactionalBundle to bin/deps:
-
-    TransactionalBundle origin/HEAD
-
-2. Add TransactionBundle to bin/2.0.0NEXT.deps:
-
-    /bundles/SimpleThings   TransactionalBundle   http://github.com/SimpleThings/TransactionalBundle.git
-
-3. Run ./bin/vendors.php to upgrade vendors and include TransactionalBundle
-
-4. Add Bundle to app/AppKernel.php
-
-    public function registerBundles() 
-    {
-        $bundles = array(
-            //..
-            new SimpleThings\TransactionalBundle\SimpleThingsTransactionalBundle(),
-            //..
-        );
-    }
-
-5. Add to autoload.php
-
-    'SimpleThings'     => __DIR__.'/../vendor/bundles',
-
-6. Configure extension:
-
-    simple_things_transactional: ~
-
 ## How it works
 
 For every Doctrine DBAL connection, every EntityManager and every DocumentManager the Transactional Bundle
@@ -80,6 +49,37 @@ If you want a GET request to be transactional you can explicitly set the methods
         pattern: /blog/post/edit/{id}
         defaults: { _controller: "MyBlogBundle:Post:edit", _tx: "orm.default", _tx_methods: ["GET", "POST"] }
 
+## Installation
+
+1. Add TransactionalBundle to bin/deps:
+
+    TransactionalBundle origin/HEAD
+
+2. Add TransactionBundle to bin/2.0.0NEXT.deps:
+
+    /bundles/SimpleThings   TransactionalBundle   http://github.com/SimpleThings/TransactionalBundle.git
+
+3. Run ./bin/vendors.php to upgrade vendors and include TransactionalBundle
+
+4. Add Bundle to app/AppKernel.php
+
+    public function registerBundles() 
+    {
+        $bundles = array(
+            //..
+            new SimpleThings\TransactionalBundle\SimpleThingsTransactionalBundle(),
+            //..
+        );
+    }
+
+5. Add to autoload.php
+
+    'SimpleThings'     => __DIR__.'/../vendor/bundles',
+
+6. Configure extension:
+
+    simple_things_transactional: ~
+
 ## FrameworkExtraBundle Integration
 
 Since TransactionalBundle only uses the default attributes of a route to mark a controller transactional you
@@ -101,10 +101,14 @@ You can also mark the complete controller transactional:
     use Sensio\Bundle\FrameworkExtraBundle\Configuration AS Extra;
 
     /**
-     * @ExtraRoute(defaults={"_transactional": "orm.default"})
+     * @ExtraRoute(defaults={"_tx": "orm.default"})
      */
     class PostController
     {
 
     }
 
+## TODOS
+
+* Make default tx methods configurable in extension.
+* Add "auto_commit" configuration where you can specify a tx manager and it is ALWAYS wrapped around every master controller.
