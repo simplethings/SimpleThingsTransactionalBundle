@@ -4,6 +4,16 @@ Wraps calls to controllers into a transaction, be it Doctrine DBAL or Persistenc
 Configuration is done via routing parameters or through a list of controllers/actions configured in the
 extension config.
 
+## Problem
+
+Symfony2 allows to nest controllers into each other in unlimited amounts. These controllers can all modify
+data and save this. The Doctrine persistence solutions (ORM, MongoDB, CouchDB) use a transactional write-behind
+mechanism to flush changes in batches, best executed at the end of the master request. If each controller
+or model service handles transactions themselves then you probably overuse the flush operation, which
+can lead to inconsistencies and performance penalities.
+
+These flushes should not be executed in the model/services but should be handled by the controller layer, because it knows when all operations are done.
+
 ## How it works
 
 For every Doctrine DBAL connection, every EntityManager and every DocumentManager the Transactional Bundle
@@ -48,6 +58,28 @@ If you want a GET request to be transactional you can explicitly set the methods
     blog_post_edit:
         pattern: /blog/post/edit/{id}
         defaults: { _controller: "MyBlogBundle:Post:edit", _tx: "orm.default", _tx_methods: ["GET", "POST"] }
+
+## Example
+
+Using the previous routes as example here is a sample action that does not require any calls to EntityManager::flush anymore.
+
+    class PostController extends Controller
+    {
+        public function editAction($id)
+        {
+            $em = $this->container->get('doctrine.orm.default_entity_manager');
+            $post = $em->find('Post', $id);
+            
+            if ($this->container->get('request')->getMethod() == 'POST') {
+                $post->modifyState();
+                // no need to call $em->flush(), the controller is executed in a transactional wrapper
+            
+                return $this->redirect($this->generateUrl("view_post", array("id" => $post->getId()));
+            }
+
+            return $this->render("MyBlogBundle:Post:edit.html.twig", array());
+        }
+    }
 
 ## Installation
 
