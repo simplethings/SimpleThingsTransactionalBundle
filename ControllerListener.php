@@ -33,7 +33,7 @@ class ControllerListener
             if ($request->attributes->has('_tx_methods')) {
                 $methods = (array)$request->attributes->has('_tx_methods');
             } else {
-                $methods = array("POST", "PUT", "DELETE");
+                $methods = array("POST", "PUT", "DELETE", "PATCH");
             }
             if (!in_array($request->getMethod(), $methods)) {
                 return;

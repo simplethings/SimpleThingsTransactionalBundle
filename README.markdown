@@ -6,8 +6,8 @@ extension config.
 
 ## Problem
 
-Symfony2 allows to nest controllers into each other in unlimited amounts. These controllers can all modify
-data and save this. The Doctrine persistence solutions (ORM, MongoDB, CouchDB) use a transactional write-behind
+Symfony2 allows to nest controllers into each other in unlimited amounts. These controllers can all modify and save
+data, probably with different transactional needs. The Doctrine persistence solutions (ORM, MongoDB, CouchDB) use a transactional write-behind
 mechanism to flush changes in batches, best executed at the end of the master request. If each controller
 or model service handles transactions themselves then you probably overuse the flush operation, which
 can lead to inconsistencies and performance penalities.
@@ -27,7 +27,7 @@ creates a service that implements a transactions manager interface:
     }
 
 With the transactional bundle the following workflow is applied to a controller that is marked
-as transactional (by default only if POST, PUT, DELETE request is found).
+as transactional (by default only if POST, PUT, DELETE, PATCH request is found).
 
 1. A transaction is started before the controller is called
 2. The controller execution is wrapped in a try-catch block
