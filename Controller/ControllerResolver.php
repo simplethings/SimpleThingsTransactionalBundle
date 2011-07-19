@@ -12,7 +12,7 @@
  * to kontakt@beberlei.de so I can send you a copy immediately.
  */
 
-namespace SimpleThings\TransactionalBundle;
+namespace SimpleThings\TransactionalBundle\Controller;
 
 use Symfony\Bundle\FrameworkBundle\Controller\ControllerResolver as BaseControllerResolver;
 use Symfony\Component\HttpFoundation\Request;
@@ -21,7 +21,7 @@ class ControllerResolver extends BaseControllerResolver
 {
     public function getArguments(Request $request, $controller)
     {
-        if (is_array($controller) && $controller[0] instanceof TransactionalController) {
+        if (is_array($controller) && $controller[0] instanceof TransactionalControllerWrapper) {
             $controller[0] = $controller[0]->getController();
         }
         return parent::getArguments($request, $controller);

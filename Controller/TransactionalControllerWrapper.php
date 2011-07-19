@@ -12,21 +12,25 @@
  * to kontakt@beberlei.de so I can send you a copy immediately.
  */
 
-namespace SimpleThings\TransactionalBundle;
+namespace SimpleThings\TransactionalBundle\Controller;
 
-class TransactionalController
+use SimpleThings\TransactionalBundle\Transactions\TransactionDefinition;
+
+class TransactionalControllerWrapper
 {
     private $controller;
     private $txManagers = array();
+    private $def;
     
     /**
      * @param array $controller
      * @param array $txManagers
      */
-    public function __construct($controller, array $txManagers)
+    public function __construct($controller, array $txManagers, TransactionDefinition $definition)
     {
         $this->controller = $controller;
         $this->txManagers = $txManagers;
+        $this->def = $definition;
     }
     
     public function getController()
@@ -43,14 +47,16 @@ class TransactionalController
         try {
             $response = call_user_func_array(array($this->controller, $method), $args);
             
-            foreach ($this->txManagers AS $txManager) {
+            foreach ($this->txManagers AS $txName => $txManager) {
                 $txManager->commit();
             }
             return $response;
             
         } catch(\Exception $e) {
-            foreach ($this->txManagers AS $txManager) {
-                $txManager->rollBack();
+            foreach ($this->txManagers AS $txName => $txManager) {
+                if (!in_array(get_class($e), $this->def->getNoRollbackFor($txName))) {
+                    $txManager->rollBack();
+                }
             }
             throw $e;
         }

@@ -9,7 +9,8 @@
         <parameter key="simple_things_transactional.manager.orm.class">SimpleThings\TransactionalBundle\Transactions\Doctrine\EntityManagerTransactionManager</parameter>
         <parameter key="simple_things_transactional.manager.mongodb.class">SimpleThings\TransactionalBundle\Transactions\Doctrine\MongoDBTransactionManager</parameter>
         <parameter key="simple_things_transactional.manager.couchdb.class">SimpleThings\TransactionalBundle\Transactions\Doctrine\CouchDBTransactionManager</parameter>
-        <parameter key="simple_things_transactional.controller_listener.class">SimpleThings\TransactionalBundle\ControllerListener</parameter>
+        <parameter key="simple_things_transactional.controller_listener.class">SimpleThings\TransactionalBundle\Controller\ControllerListener</parameter>
+        <parameter key="simple_things_transactional.transactional_matcher.class">SimpleThings\TransactionalBundle\Transactions\TransactionalMatcher</parameter>
         <parameter key="controller_resolver.class">SimpleThings\TransactionalBundle\ControllerResolver</parameter>
     </parameters>
     
@@ -21,7 +22,12 @@
         
         <service id="simple_things_transactional.controller_listener" class="%simple_things_transactional.controller_listener.class%">
             <argument type="service" id="service_container" />
+            <argument type="service" id="simple_things_transactional.transactional_matcher" />
             <tag name="kernel.listener" event="core.controller" method="onCoreController" />
+        </service>
+
+        <service id="simple_things_transactional.transactional_matcher" class="%simple_things_transactional.transactional_matcher.class%">
+            <argument type="collection" />
         </service>
     </services>
         
