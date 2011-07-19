@@ -88,6 +88,8 @@ Every transactional configuration that matches for a given controller+action com
 
 ### Annotations
 
+#### Warning: This is not yet implemented.
+
 You can also configure transactional behavior with annotations. The configuration for annotations is as simple as:
 
     simple_things_transactional:
@@ -139,30 +141,30 @@ Using the previous routes as example here is a sample action that does not requi
 
 1. Add TransactionalBundle to deps:
 
-    [SimpleThingsTransactionalBundle]
-    git=git@github.com:simplethings/SimpleThingsTransactionalBundle.git
-    target=/bundles/SimpleThings/TransactionalBundle
+        [SimpleThingsTransactionalBundle]
+        git=git@github.com:simplethings/SimpleThingsTransactionalBundle.git
+        target=/bundles/SimpleThings/TransactionalBundle
 
 2. Run ./bin/vendors to upgrade vendors and include TransactionalBundle
 
 4. Add Bundle to app/AppKernel.php
 
-    public function registerBundles() 
-    {
-        $bundles = array(
-            //..
-            new SimpleThings\TransactionalBundle\SimpleThingsTransactionalBundle(),
-            //..
-        );
-    }
+        public function registerBundles()
+        {
+            $bundles = array(
+                //..
+                new SimpleThings\TransactionalBundle\SimpleThingsTransactionalBundle(),
+                //..
+            );
+        }
 
 5. Add to autoload.php
 
-    'SimpleThings'     => __DIR__.'/../vendor/bundles',
+        'SimpleThings'     => __DIR__.'/../vendor/bundles',
 
 6. Configure extension:
 
-    simple_things_transactional: ~
+        simple_things_transactional: ~
 
 ## Todos
 
