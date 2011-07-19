@@ -164,3 +164,7 @@ Using the previous routes as example here is a sample action that does not requi
 
     simple_things_transactional: ~
 
+## Todos
+
+* Annotations are missing
+* Try to evaluate if hooking into exception_handler is a killing exceptions from controllers more gracefully and not having them loose the stack trace.
