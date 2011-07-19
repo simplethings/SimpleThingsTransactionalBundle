@@ -36,6 +36,8 @@ class ControllerListener
         $def = $this->matcher->match($request, $event->getController());
 
         if ($def) {
+            list($controller, $action) = $event->getController();
+
             $txManagers = array();
             foreach ($def->getConnections() AS $txConnName) {
                 $id = "simple_things_transactional.tx.".$txConnName;
@@ -47,7 +49,7 @@ class ControllerListener
                 $txManagers[$txConnName] = $this->container->get($id);
             }
 
-            $controller = new TransactionalControllerWrapper($controller, $txManagers, $def);
+            $controller = new TransactionalControllerWrapper($controller, $txManagers, $def, $this->container->get('logger'));
             $event->setController(array($controller, $action));
         }
 
