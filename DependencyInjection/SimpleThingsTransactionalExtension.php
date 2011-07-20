@@ -59,8 +59,10 @@ class SimpleThingsTransactionalExtension extends Extension
             $patterns = array( $config['defaults'] );
         } else {
             $patterns = array();
-            foreach ($config['patterns'] AS $pattern) {
-                $patterns[] = array_merge($config['defaults'], $pattern);
+            if (isset($config['patterns'])) {
+                foreach ($config['patterns'] AS $pattern) {
+                    $patterns[] = array_merge($config['defaults'], $pattern);
+                }
             }
         }
 

@@ -137,6 +137,7 @@ class TransactionalMatcher
                 'isolation' => $pattern['isolation'],
                 'propagation' => $pattern['propagation'],
                 'noRollbackFor' => $pattern['noRollbackFor'],
+                'subrequest' => $pattern['subrequest'],
             );
         }
     }
