@@ -43,29 +43,35 @@ class SimpleThingsTransactionalExtension extends Extension
         }
 
         if (!isset($config['defaults'])) {
-            $config['defaults'] = array(
+            $config['defaults'] = array();
+        }
+        $config['defaults'] = array_merge(array(
+                'conn' => array(),
                 'pattern' => '.*',
                 'propagation' => TransactionDefinition::PROPAGATION_REQUIRED,
                 'isolation' => TransactionDefinition::ISOLATION_DEFAULT,
                 'noRollbackFor' => array(),
-                'methods' => array('POST' => true, 'PUT' => true, 'DELETE' => true, 'PATCH' => true),
-            );
-        }
+                'methods' => array('POST', 'PUT', 'DELETE', 'PATCH'),
+                'subrequest' => false,
+            ), $config['defaults']);
 
         if (isset($config['auto_transactional']) && $config['auto_transactional']) {
-            $patterns = array( array_merge($config['defaults'], array('conn' => (array)$config['auto_transactional'])) );
+            $patterns = array( $config['defaults'] );
         } else {
             $patterns = array();
             foreach ($config['patterns'] AS $pattern) {
-                if (isset($pattern['methods'])) {
-                    $pattern['methods'] = array_flip($pattern['methods']);
-                }
                 $patterns[] = array_merge($config['defaults'], $pattern);
             }
         }
 
+        if (isset($config['annotations']) && $config['annotations'] == true) {
+            $args = array($patterns, $config['defaults'], new Reference('annotation_reader'));
+        } else {
+            $args = array($patterns);
+        }
+
         $def = $builder->getDefinition('simple_things_transactional.transactional_matcher');
-        $def->setArguments(array($patterns));
+        $def->setArguments($args);
 
         if ($builder->hasParameter('doctrine.connections')) {
             foreach ($builder->getParameter('doctrine.connections') AS $alias => $service) {

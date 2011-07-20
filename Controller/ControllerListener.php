@@ -15,6 +15,7 @@
 namespace SimpleThings\TransactionalBundle\Controller;
 
 use Symfony\Component\HttpKernel\Event\FilterControllerEvent;
+use Symfony\Component\HttpKernel\HttpKernelInterface;
 use Symfony\Component\DependencyInjection\ContainerInterface;
 use SimpleThings\TransactionalBundle\Controller\TransactionalControllerWrapper;
 use SimpleThings\TransactionalBundle\Transactions\TransactionalMatcher;
@@ -35,7 +36,8 @@ class ControllerListener
         $request = $event->getRequest();
         $def = $this->matcher->match($request, $event->getController());
 
-        if ($def) {
+        if ($def && ($def->isInvokedOnSubrequest() === true || $event->getRequestType() == HttpKernelInterface::SUB_REQUEST)) {
+
             list($controller, $action) = $event->getController();
 
             $txManagers = array();

@@ -54,9 +54,11 @@ If you have a small RESTful application and you only use one transactional manag
 is as simple as configuring the transactional managers name in the app/config/config.yml extension configuration:
 
     simple_things_transactional:
-        auto_transactional: orm.default
+        auto_transactional: true
+        defaults:
+            conn: ["orm.default"]
 
-With this configuration every POST, PUT, DELETE and PATCH request is wrapped inside a transaction of the given name.
+With this configuration every POST, PUT, DELETE and PATCH request is wrapped inside a transaction of the given connection.
 There is no way to disable this behavior except by throwing an exception. GET requests that need to write a transaction
 have to do this explicitly.
 
@@ -65,8 +67,9 @@ have to do this explicitly.
 If you have an application that is either not RESTful, uses multiple transactional managers or has advanced
 requirements with regard to transactions then you should configure the transactional behavior explicitly.
 
-You can do so by specifying fcqn controller and action names either as regexp or as full key that is matched.
+You can do so by matching fcqn controller and action names with regular expression.
 Every transactional configuration that matches for a given controller+action combination is started.
+If a transaction is started for a connection multiple times then an exception is thrown.
 
     simple_things_transactional:
         defaults:
@@ -78,17 +81,17 @@ Every transactional configuration that matches for a given controller+action com
                 # not giving conn: uses the default
                 propagation: REQUIRES_NEW
                 noRollbackFor: ["NotFoundHttpException"]
+                subrequest: true
             acme:
                 pattern: "Acme(.*)"
                 conn: ["orm.default", "couchdb.default"]
+                subrequest: false
             acme_logging:
                 pattern: "Acme\DemoBundle\Controller\IndexController::logAction"
                 conn: ["dbal.other"]
                 methods: ["GET"]
 
 ### Annotations
-
-#### Warning: This is not yet implemented.
 
 You can also configure transactional behavior with annotations. The configuration for annotations is as simple as:
 
@@ -168,5 +171,6 @@ Using the previous routes as example here is a sample action that does not requi
 
 ## Todos
 
-* Annotations are missing
+* Implement Propagation
+* Implement Isolation
 * Try to evaluate if hooking into exception_handler is a killing exceptions from controllers more gracefully and not having them loose the stack trace.

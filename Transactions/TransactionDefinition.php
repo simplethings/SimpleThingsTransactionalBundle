@@ -53,4 +53,9 @@ class TransactionDefinition
     {
         return $this->connections[$connection]['noRollbackFor'];
     }
+
+    public function isInvokedOnSubrequest()
+    {
+        return $this->connections[$connection]['subrequest'];
+    }
 }
