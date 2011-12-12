@@ -12,6 +12,7 @@
         <parameter key="simple_things_transactional.controller_listener.class">SimpleThings\TransactionalBundle\Controller\ControllerListener</parameter>
         <parameter key="simple_things_transactional.transactional_matcher.class">SimpleThings\TransactionalBundle\Transactions\TransactionalMatcher</parameter>
         <parameter key="controller_resolver.class">SimpleThings\TransactionalBundle\Controller\ControllerResolver</parameter>
+        <parameter key="debug.controller_resolver.class">SimpleThings\TransactionalBundle\Controller\TraceableControllerResolver</parameter>
     </parameters>
     
     <services>
