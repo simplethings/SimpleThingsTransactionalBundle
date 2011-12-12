@@ -87,7 +87,9 @@ class TransactionalMatcher
     private function matchPatterns($subject, $method)
     {
         foreach ($this->patterns AS $pattern) {
-            if (in_array($method, $pattern['methods']) && preg_match('('.$pattern.')', $subject)) {
+            if (in_array($method, $pattern['methods'])
+                && preg_match('(' . preg_quote($pattern['pattern']) . ')', $subject)
+            ) {
                 $this->storeMatch($subject, $method, $pattern);
             }
         }
