@@ -24,13 +24,13 @@ class ControllerListener
 {
     private $container;
     private $matcher;
-    
+
     public function __construct(ContainerInterface $container, TransactionalMatcher $matcher)
     {
         $this->container = $container;
         $this->matcher = $matcher;
     }
-    
+
     public function onCoreController(FilterControllerEvent $event)
     {
         $request = $event->getRequest();

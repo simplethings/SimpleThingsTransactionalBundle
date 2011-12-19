@@ -48,7 +48,7 @@ class TransactionalMatcher
 
     /**
      * Match if he current controller/action should be transactional or not.
-     * 
+     *
      * @param Request $request
      * @param mixed $controllerCallback
      * @return TransactionDefinition|false
@@ -65,11 +65,11 @@ class TransactionalMatcher
 
         $subject = $class . "::" . $action;
 
-        if (!isset($this->cache[$subject][$method])) {            
+        if (!isset($this->cache[$subject][$method])) {
             $this->matchPatterns($subject, $method);
             $this->matchAnnotations($subject, $method, $controller, $action);
 
-            if (!isset($this->cache[$subject][$method])) {   
+            if (!isset($this->cache[$subject][$method])) {
                 $this->cache[$subject][$method] = false;
             } else {
                 $this->cache[$subject][$method] = new TransactionDefinition($this->cache[$subject][$method]);
@@ -80,7 +80,7 @@ class TransactionalMatcher
 
     /**
      * Match transactional patterns.
-     * 
+     *
      * @param string $subject
      * @param string $method
      */
@@ -95,7 +95,7 @@ class TransactionalMatcher
 
     /**
      * Match annotations on controllers for transactional behavior.
-     * 
+     *
      * @param string $subject
      * @param string $method
      * @param object $controller

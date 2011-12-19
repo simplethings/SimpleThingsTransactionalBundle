@@ -128,17 +128,19 @@ Using the previous routes as example here is a sample action that does not requi
         {
             $em = $this->container->get('doctrine.orm.default_entity_manager');
             $post = $em->find('Post', $id);
-            
+
             if ($this->container->get('request')->getMethod() == 'POST') {
                 $post->modifyState();
                 // no need to call $em->flush(), the flush is executed in a transactional wrapper
-            
+
                 return $this->redirect($this->generateUrl("view_post", array("id" => $post->getId()));
             }
 
             return $this->render("MyBlogBundle:Post:edit.html.twig", array());
         }
     }
+
+`EntityManager#flush()` is only called when the requet is using the POST-method.
 
 ## Installation
 
