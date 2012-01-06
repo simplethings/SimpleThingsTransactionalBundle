@@ -20,10 +20,21 @@ use Symfony\Component\DependencyInjection\ContainerInterface;
 use SimpleThings\TransactionalBundle\Controller\TransactionalControllerWrapper;
 use SimpleThings\TransactionalBundle\Transactions\TransactionalMatcher;
 
+/**
+ * Transactional controller listener.
+ *
+ * Checks if the request should run in transactional scope during the
+ * onCoreController event. Transactions are opened for every manager matches
+ * the criteria configured.
+ *
+ * Depending on the success or failure of the request the open transactions are
+ * either rolled back or committed.
+ */
 class ControllerListener
 {
     private $container;
     private $matcher;
+    private $logger;
 
     public function __construct(ContainerInterface $container, TransactionalMatcher $matcher)
     {
@@ -37,25 +48,81 @@ class ControllerListener
         $def = $this->matcher->match($request, $event->getController());
 
         if ($def) {
-
-            list($controller, $action) = $event->getController();
-
             $txManagers = array();
             foreach ($def->getConnections() AS $txConnName) {
                 if (($def->isInvokedOnSubrequest($txConnName) === true || $event->getRequestType() == HttpKernelInterface::SUB_REQUEST)) {
-                    $id = "simple_things_transactional.tx.".$txConnName;
-                    if (!$this->container->has($id)) {
-                        throw new \InvalidArgumentException(
-                            "A transactional manager by name of '".$txConnName."' was requested, but does not exist."
-                        );
-                    }
-                    $txManagers[$txConnName] = $this->container->get($id);
+                    $this->getTransaction($txConnName)->beginTransaction();
+                    $txManagers[] = $txConnName;
                 }
             }
 
-            $controller = new TransactionalControllerWrapper($controller, $txManagers, $def, $this->container->get('logger'));
-            $event->setController(array($controller, $action));
+            if ($txManagers && $this->logger) {
+                $this->logger->info("[TransactionBundle] Started transactions for " . implode(", ", $txManagers));
+            }
+
+            $request->attributes->set('_transactions', $txManagers);
+        }
+    }
+
+    private function getTransaction($name)
+    {
+        $id = "simple_things_transactional.tx.".$name;
+        if (!$this->container->has($id)) {
+            throw new \InvalidArgumentException(
+                "A transactional manager by name of '".$name."' was requested, but does not exist."
+            );
+        }
+        return $this->container->get($id);
+    }
+
+    public function onKernelResponse(FilterResponseEvent $event)
+    {
+        $request = $event->getRequest();
+        $response = $event->getResponse();
+
+        if (!$request->attributes->has('_transactions')) {
+            return;
         }
 
+        $txManagers = $request->attributes->get('_transactions');
+        if ($response->getStatusCode() >= 500) {
+            $this->rollBack($txManagers);
+        } else {
+            $this->commit($txManagers);
+        }
+    }
+
+    public function onKernelException(GetResponseForExceptionEvent $event)
+    {
+        $request = $event->getRequest();
+
+        if (!$request->attributes->has('_transactions')) {
+            return;
+        }
+
+        $txManagers = $request->attributes->get('_transactions');
+        $this->rollBack($txManagers);
+    }
+
+    private function commit($txManagers)
+    {
+        foreach ($txManagers AS $txConnName) {
+            $this->getTransaction($txConnName)->commit();
+        }
+
+        if ($this->logger) {
+            $this->logger->info("[TransactionBundle] Committed transactions for " . implode(", ", array_keys($txManagers)));
+        }
+    }
+
+    private function rollBack($txManagers)
+    {
+        foreach ($txManagers AS $txConnName) {
+            $this->getTransaction($txConnName)->rollback();
+        }
+
+        if ($this->logger) {
+            $this->logger->info("[TransactionBundle] Aborted transactions for " . implode(", ", array_keys($this->txManagers)));
+        }
     }
 }

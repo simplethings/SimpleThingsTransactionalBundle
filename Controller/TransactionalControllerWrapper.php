@@ -23,7 +23,7 @@ class TransactionalControllerWrapper
     private $txManagers = array();
     private $def;
     private $logger;
-    
+
     /**
      * @param array $controller
      * @param array $txManagers
@@ -35,12 +35,12 @@ class TransactionalControllerWrapper
         $this->def = $definition;
         $this->logger = $logger;
     }
-    
+
     public function getController()
     {
         return $this->controller;
     }
-    
+
     public function __call($method, $args)
     {
         foreach ($this->txManagers AS $txManager) {
@@ -49,10 +49,10 @@ class TransactionalControllerWrapper
         if ($this->logger) {
             $this->logger->info("[TransactionBundle] Started transactions for " . implode(", ", array_keys($this->txManagers)));
         }
-        
+
         try {
             $response = call_user_func_array(array($this->controller, $method), $args);
-            
+
             foreach ($this->txManagers AS $txName => $txManager) {
                 $txManager->commit();
             }
