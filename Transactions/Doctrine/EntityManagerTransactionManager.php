@@ -14,7 +14,7 @@
 
 namespace SimpleThings\TransactionalBundle\Transactions\Doctrine;
 
-use Symfony\Bundle\DoctrineBundle\Registry;
+use Doctrine\Bundle\DoctrineBundle\Registry;
 use SimpleThings\TransactionalBundle\Transactions\TransactionManagerInterface;
 
 class EntityManagerTransactionManager implements TransactionManagerInterface
@@ -30,20 +30,19 @@ class EntityManagerTransactionManager implements TransactionManagerInterface
 
     public function beginTransaction()
     {
-        $this->doctrineRegistry->getEntityManager($this->name)->beginTransaction();
+        $this->doctrineRegistry->getManager($this->name)->beginTransaction();
     }
 
     public function commit()
     {
-        $em = $this->doctrineRegistry->getEntityManager($this->name);
+        $em = $this->doctrineRegistry->getManager($this->name);
         $em->flush();
         $em->commit();
     }
 
     public function rollBack()
     {
-        $this->doctrineRegistry->getEntityManager($this->name)->rollback();
+        $this->doctrineRegistry->getManager($this->name)->rollback();
         $this->doctrineRegistry->resetEntityManager($this->name);
     }
-
 }
