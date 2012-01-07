@@ -11,7 +11,7 @@
  * to kontakt@beberlei.de so I can send you a copy immediately.
  */
 
-namespace SimpleThingsTransactionalBundle\Transactions;
+namespace SimpleThings\TransactionalBundle\Transactions;
 
 /**
  * Contains information about the current state of a transaction.
@@ -55,7 +55,7 @@ interface TransactionStatus
      *
      * @return bool
      */
-    function hasSavepoint()
+    function hasSavepoint();
 
     /**
      * Commit the transaction at this point.

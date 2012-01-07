@@ -31,7 +31,7 @@ use Symfony\Component\HttpKernel\Log\LoggerInterface;
  * Depending on the success or failure of the request the open transactions are
  * either rolled back or committed.
  */
-class ControllerListener
+class HttpTransactionsListener
 {
     private $container;
     private $matcher;
@@ -47,13 +47,15 @@ class ControllerListener
     public function onCoreController(FilterControllerEvent $event)
     {
         $request = $event->getRequest();
-        $definitions = $this->matcher->match($request, $event->getController());
+        $definitions = $this->matcher->match($request->getMethod(), $event->getController());
 
         if ($definitions) {
             $txManagers = array();
             foreach ($definitions as $def) {
                 $managerName = $def->getManagerName();
-                $txManagers[$managerName] = $this->getTransactionManager($managerName)->getTransaction($def)
+                if ($txStatus = $this->getTransactionManager($managerName)->getTransaction($def)) {
+                    $txManagers[$managerName] = $txStatus;
+                }
             }
 
             if ($txManagers && $this->logger) {
@@ -106,7 +108,7 @@ class ControllerListener
 
     private function commit($txManagers)
     {
-        foreach ($txManagers AS $managerName = $txStatus) {
+        foreach ($txManagers AS $managerName => $txStatus) {
             $this->getTransaction($managerName)->commit($txStatus);
         }
 
@@ -117,7 +119,7 @@ class ControllerListener
 
     private function rollBack($txManagers)
     {
-        foreach ($txManagers AS $managerName = $txStatus) {
+        foreach ($txManagers AS $managerName => $txStatus) {
             $this->getTransaction($managerName)->rollBack($txStatus);
         }
 

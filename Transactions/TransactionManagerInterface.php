@@ -29,7 +29,7 @@ interface TransactionManagerInterface
      *
      * @return TransactionDefinition
      */
-    function getTransaction(TransactionDefintion $def);
+    function getTransaction(TransactionDefinition $def);
 
     /**
      * Commit the transaction inside the status object.

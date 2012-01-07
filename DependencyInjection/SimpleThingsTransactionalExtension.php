@@ -52,7 +52,6 @@ class SimpleThingsTransactionalExtension extends Extension
                 'isolation' => TransactionDefinition::ISOLATION_DEFAULT,
                 'noRollbackFor' => array(),
                 'methods' => array('POST', 'PUT', 'DELETE', 'PATCH'),
-                'subrequest' => false,
             ), $config['defaults']);
 
         if (isset($config['auto_transactional']) && $config['auto_transactional']) {
@@ -83,7 +82,7 @@ class SimpleThingsTransactionalExtension extends Extension
                 )->setArguments(array(new Reference($service)));
             }
         }
-        
+
         if ($builder->hasParameter('doctrine.entity_managers')) {
             foreach ($builder->getParameter('doctrine.entity_managers') AS $alias => $service) {
                 $builder->setDefinition(
@@ -92,7 +91,7 @@ class SimpleThingsTransactionalExtension extends Extension
                 )->setArguments(array(new Reference('doctrine'), $alias));
             }
         }
-        
+
         if ($builder->hasParameter('doctrine_couchdb.document_managers')) {
             foreach ($builder->getParameter('doctrine_couchdb.document_managers') AS $alias => $service) {
                 $builder->setDefinition(
@@ -101,7 +100,7 @@ class SimpleThingsTransactionalExtension extends Extension
                 )->setArguments(array(new Reference($service)));
             }
         }
-        
+
         if ($builder->hasParameter('doctrine_mongodb.document_managers')) {
             foreach ($builder->getParameter('doctrine_mongodb.document_managers') AS $alias => $service) {
                 $builder->setDefinition(
