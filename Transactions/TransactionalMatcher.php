@@ -59,16 +59,15 @@ class TransactionalMatcher
      * Important: Only Controller as services or Class#Action method
      * controllers can be transactional.
      *
-     * @param Request $request
+     * @param string $method HTTP Method
      * @param mixed $controllerCallback
      * @return TransactionDefinition|false
      */
-    public function match(Request $request, $controllerCallback)
+    public function match($method, $controllerCallback)
     {
         if (!is_array($controllerCallback)) {
             return false;
         }
-        $method = $request->getMethod();
 
         list($controller, $action) = $controllerCallback;
         $class = get_class($controller);

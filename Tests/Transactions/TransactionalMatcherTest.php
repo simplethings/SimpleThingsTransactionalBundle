@@ -27,10 +27,9 @@ class TransactionalMatcherTest extends \PHPUnit_Framework_TestCase
         );
 
         $matcher = new TransactionalMatcher(array($pattern), array(), $this->reader);
-        $request = Request::create('/foo', $method);
         $controller = new TestController();
 
-        $definitions = $matcher->match($request, array($controller, 'fooAction'));
+        $definitions = $matcher->match($method, array($controller, 'fooAction'));
 
         if ($matched) {
             $this->assertInternalType('array', $definitions);
@@ -51,7 +50,6 @@ class TransactionalMatcherTest extends \PHPUnit_Framework_TestCase
         );
 
         $matcher = new TransactionalMatcher(array(), $defaults, $this->reader);
-        $request = Request::create('/foo', 'GET');
         $controller = new TestController();
 
         $this->reader->expects($this->once())
@@ -63,7 +61,7 @@ class TransactionalMatcherTest extends \PHPUnit_Framework_TestCase
                 ))
             ));
 
-        $definition = $matcher->match($request, array($controller, 'fooAction'));
+        $definition = $matcher->match('GET', array($controller, 'fooAction'));
 
         $expectedDefinition = new TransactionDefinition(
             'orm.default',
@@ -84,7 +82,6 @@ class TransactionalMatcherTest extends \PHPUnit_Framework_TestCase
         );
 
         $matcher = new TransactionalMatcher(array(), $defaults, $this->reader);
-        $request = Request::create('/foo', 'GET');
         $controller = new TestController();
 
         $this->reader->expects($this->once())
@@ -98,7 +95,7 @@ class TransactionalMatcherTest extends \PHPUnit_Framework_TestCase
                 ))
             ));
 
-        $definition = $matcher->match($request, array($controller, 'fooAction'));
+        $definition = $matcher->match('GET', array($controller, 'fooAction'));
 
         $expectedDefinition = new TransactionDefinition(
             'orm.default',
