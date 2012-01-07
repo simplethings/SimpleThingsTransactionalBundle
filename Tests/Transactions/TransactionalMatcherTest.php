@@ -14,7 +14,7 @@ class TransactionalMatcherTest extends \PHPUnit_Framework_TestCase
     /**
      * @dataProvider getPatterns
      */
-    public function testMatchPattern($pattern, $method, $matched)
+    public function testMatchPattern($pattern, $method, $matched, $readOnly)
     {
         $pattern = array(
             'pattern' => $pattern,
@@ -30,20 +30,15 @@ class TransactionalMatcherTest extends \PHPUnit_Framework_TestCase
         $request = Request::create('/foo', $method);
         $controller = new TestController();
 
-        $definition = $matcher->match($request, array($controller, 'fooAction'));
+        $definitions = $matcher->match($request, array($controller, 'fooAction'));
 
         if ($matched) {
-            $expectedDefinition = new TransactionDefinition(array(
-                'orm.default' => array(
-                    'isolation' => TransactionDefinition::ISOLATION_DEFAULT,
-                    'propagation' => TransactionDefinition::PROPAGATION_REQUIRED,
-                    'noRollbackFor' => array(),
-                    'subrequest' => false,
-                )
-            ));
-            $this->assertEquals($expectedDefinition, $definition);
+            $this->assertInternalType('array', $definitions);
+            $this->assertCount(1, $definitions);
+            $this->assertEquals('orm.default', $definitions[0]->getManagerName());
+            $this->assertEquals($readOnly, $definitions[0]->getReadOnly());
         } else {
-            $this->assertFalse($definition);
+            $this->assertCount(0, $definitions);
         }
     }
 
@@ -64,22 +59,20 @@ class TransactionalMatcherTest extends \PHPUnit_Framework_TestCase
             ->will($this->returnValue(
                 new Transactional(array(
                     'methods' => array('GET'),
-                    'subrequest' => true,
                     'conn' => array('orm.default'),
                 ))
             ));
 
         $definition = $matcher->match($request, array($controller, 'fooAction'));
 
-        $expectedDefinition = new TransactionDefinition(array(
-            'orm.default' => array(
-                'isolation' => TransactionDefinition::ISOLATION_DEFAULT,
-                'propagation' => TransactionDefinition::PROPAGATION_REQUIRED,
-                'noRollbackFor' => array(),
-                'subrequest' => true,
-            )
-        ));
-        $this->assertEquals($expectedDefinition, $definition);
+        $expectedDefinition = new TransactionDefinition(
+            'orm.default',
+            TransactionDefinition::PROPAGATION_REQUIRED,
+            TransactionDefinition::ISOLATION_DEFAULT,
+            false,
+            array()
+        );
+        $this->assertEquals($expectedDefinition, $definition[0]);
     }
 
     public function testMatchMethodAnnotation()
@@ -101,22 +94,20 @@ class TransactionalMatcherTest extends \PHPUnit_Framework_TestCase
             ->will($this->returnValue(
                 new Transactional(array(
                     'methods' => array('GET'),
-                    'subrequest' => true,
                     'conn' => array('orm.default'),
                 ))
             ));
 
         $definition = $matcher->match($request, array($controller, 'fooAction'));
 
-        $expectedDefinition = new TransactionDefinition(array(
-            'orm.default' => array(
-                'isolation' => TransactionDefinition::ISOLATION_DEFAULT,
-                'propagation' => TransactionDefinition::PROPAGATION_REQUIRED,
-                'noRollbackFor' => array(),
-                'subrequest' => true,
-            )
-        ));
-        $this->assertEquals($expectedDefinition, $definition);
+        $expectedDefinition = new TransactionDefinition(
+            'orm.default',
+            TransactionDefinition::PROPAGATION_REQUIRED,
+            TransactionDefinition::ISOLATION_DEFAULT,
+            false,
+            array()
+        );
+        $this->assertEquals($expectedDefinition, $definition[0]);
     }
 
     /**
@@ -152,11 +143,11 @@ class TransactionalMatcherTest extends \PHPUnit_Framework_TestCase
     public function getPatterns()
     {
         return array(
-            array('.*', 'POST', true),
-            array('SimpleThings\\\\(.+)Controller::(.+)Action', 'POST', true),
-            array('SimpleThings\\\\TransactionalBundle\\\\Tests\\\\Transactions\\\\TestController::fooAction', 'POST', true),
-            array('.*', 'GET', false),
-            array('SimpleThings\\\\(.+)Controller::barAction', 'POST', false),
+            array('.*', 'POST', true, false),
+            array('SimpleThings\\\\(.+)Controller::(.+)Action', 'POST', true, false),
+            array('SimpleThings\\\\TransactionalBundle\\\\Tests\\\\Transactions\\\\TestController::fooAction', 'POST', true, false),
+            array('.*', 'GET', true, true),
+            array('SimpleThings\\\\(.+)Controller::barAction', 'POST', false, false),
         );
     }
 

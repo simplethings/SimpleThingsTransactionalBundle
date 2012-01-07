@@ -19,6 +19,7 @@ use Symfony\Component\HttpKernel\HttpKernelInterface;
 use Symfony\Component\DependencyInjection\ContainerInterface;
 use SimpleThings\TransactionalBundle\Controller\TransactionalControllerWrapper;
 use SimpleThings\TransactionalBundle\Transactions\TransactionalMatcher;
+use Symfony\Component\HttpKernel\Log\LoggerInterface;
 
 /**
  * Transactional controller listener.
@@ -36,35 +37,34 @@ class ControllerListener
     private $matcher;
     private $logger;
 
-    public function __construct(ContainerInterface $container, TransactionalMatcher $matcher)
+    public function __construct(ContainerInterface $container, TransactionalMatcher $matcher, LoggerInterface $logger = null)
     {
         $this->container = $container;
         $this->matcher = $matcher;
+        $this->logger = $logger;
     }
 
     public function onCoreController(FilterControllerEvent $event)
     {
         $request = $event->getRequest();
-        $def = $this->matcher->match($request, $event->getController());
+        $definitions = $this->matcher->match($request, $event->getController());
 
-        if ($def) {
+        if ($definitions) {
             $txManagers = array();
-            foreach ($def->getConnections() AS $txConnName) {
-                if (($def->isInvokedOnSubrequest($txConnName) === true || $event->getRequestType() == HttpKernelInterface::SUB_REQUEST)) {
-                    $this->getTransaction($txConnName)->beginTransaction();
-                    $txManagers[] = $txConnName;
-                }
+            foreach ($definitions as $def) {
+                $managerName = $def->getManagerName();
+                $txManagers[$managerName] = $this->getTransactionManager($managerName)->getTransaction($def)
             }
 
             if ($txManagers && $this->logger) {
-                $this->logger->info("[TransactionBundle] Started transactions for " . implode(", ", $txManagers));
+                $this->logger->info("[TransactionBundle] Started transactions for " . implode(", ", array_keys($txManagers)));
             }
 
             $request->attributes->set('_transactions', $txManagers);
         }
     }
 
-    private function getTransaction($name)
+    private function getTransactionManager($name)
     {
         $id = "simple_things_transactional.tx.".$name;
         if (!$this->container->has($id)) {
@@ -106,8 +106,8 @@ class ControllerListener
 
     private function commit($txManagers)
     {
-        foreach ($txManagers AS $txConnName) {
-            $this->getTransaction($txConnName)->commit();
+        foreach ($txManagers AS $managerName = $txStatus) {
+            $this->getTransaction($managerName)->commit($txStatus);
         }
 
         if ($this->logger) {
@@ -117,12 +117,12 @@ class ControllerListener
 
     private function rollBack($txManagers)
     {
-        foreach ($txManagers AS $txConnName) {
-            $this->getTransaction($txConnName)->rollback();
+        foreach ($txManagers AS $managerName = $txStatus) {
+            $this->getTransaction($managerName)->rollBack($txStatus);
         }
 
         if ($this->logger) {
-            $this->logger->info("[TransactionBundle] Aborted transactions for " . implode(", ", array_keys($this->txManagers)));
+            $this->logger->info("[TransactionBundle] Aborted transactions for " . implode(", ", array_keys($txManagers)));
         }
     }
 }

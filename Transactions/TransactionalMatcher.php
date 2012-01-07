@@ -18,6 +18,12 @@ use Symfony\Component\HttpFoundation\Request;
 use Doctrine\Common\Annotations\Reader;
 use SimpleThings\TransactionalBundle\TransactionException;
 
+/**
+ * TransactionalMatcher finds the transaction definitions for matched
+ * controllers.
+ *
+ * @todo Extract configuration into its own loader classes
+ */
 class TransactionalMatcher
 {
     /**
@@ -50,6 +56,9 @@ class TransactionalMatcher
     /**
      * Match if he current controller/action should be transactional or not.
      *
+     * Important: Only Controller as services or Class#Action method
+     * controllers can be transactional.
+     *
      * @param Request $request
      * @param mixed $controllerCallback
      * @return TransactionDefinition|false
@@ -67,29 +76,34 @@ class TransactionalMatcher
         $subject = $class . "::" . $action;
 
         if (!isset($this->cache[$subject][$method])) {
-            $this->matchPatterns($subject, $method);
-            $this->matchAnnotations($subject, $method, $controller, $action);
-
-            if (!isset($this->cache[$subject][$method])) {
-                $this->cache[$subject][$method] = false;
-            } else {
-                $this->cache[$subject][$method] = new TransactionDefinition($this->cache[$subject][$method]);
-            }
+            $this->cache[$subject] = array();
+            $this->matchPatterns($subject);
+            $this->matchAnnotations($subject, $controller, $action);
         }
-        return $this->cache[$subject][$method];
+
+        $definitions = array();
+        foreach ($this->cache[$subject] as $connectionName => $definition) {
+            $definitions[] = new TransactionDefinition(
+                $definition['managerName'],
+                $definition['propagation'],
+                $definition['isolation'],
+                ! in_array($method, $definition['methods'])
+            );
+        }
+
+        return $definitions;
     }
 
     /**
      * Match transactional patterns.
      *
      * @param string $subject
-     * @param string $method
      */
-    private function matchPatterns($subject, $method)
+    private function matchPatterns($subject)
     {
         foreach ($this->patterns AS $pattern) {
-            if (in_array($method, $pattern['methods']) && preg_match('(' . $pattern['pattern'] . ')', $subject)) {
-                $this->storeMatch($subject, $method, $pattern);
+            if (preg_match('(' . $pattern['pattern'] . ')', $subject)) {
+                $this->storeMatch($subject, $pattern);
             }
         }
     }
@@ -98,12 +112,11 @@ class TransactionalMatcher
      * Match annotations on controllers for transactional behavior.
      *
      * @param string $subject
-     * @param string $method
      * @param object $controller
      * @param string $action
      * @return void
      */
-    private function matchAnnotations($subject, $method, $controller, $action)
+    private function matchAnnotations($subject, $controller, $action)
     {
         if ($this->reader === null) {
             return;
@@ -112,33 +125,28 @@ class TransactionalMatcher
         $reflClass = new \ReflectionObject($controller);
         if ($txAnnot = $this->reader->getClassAnnotation($reflClass, 'SimpleThings\TransactionalBundle\Annotations\Transactional')) {
             $annotData = array_merge($this->defaults, array_filter((array)$txAnnot, function($v) { return $v !== null; }));
-
-            if (in_array($method, $annotData['methods'])) {
-                $this->storeMatch($subject, $method, $annotData);
-            }
+            $this->storeMatch($subject, $annotData);
         }
 
         if ($txAnnot = $this->reader->getMethodAnnotation($reflClass->getMethod($action), 'SimpleThings\TransactionalBundle\Annotations\Transactional')) {
             $annotData = array_merge($this->defaults, array_filter((array)$txAnnot, function($v) { return $v !== null; }));
-
-            if (in_array($method, $annotData['methods'])) {
-                $this->storeMatch($subject, $method, $annotData);
-            }
+            $this->storeMatch($subject, $annotData);
         }
     }
 
-    private function storeMatch($subject, $method, $pattern)
+    private function storeMatch($subject, $pattern)
     {
-        foreach ($pattern['conn'] AS $connectionName) {
-            if (isset($this->cache[$subject][$method][$connectionName])) {
-                throw TransactionException::duplicateConnectionMatch($connectionName, $pattern);
+        foreach ($pattern['conn'] AS $managerName) {
+            if (isset($this->cache[$subject][$managerName])) {
+                throw TransactionException::duplicateConnectionMatch($managerName, $pattern);
             }
 
-            $this->cache[$subject][$method][$connectionName] = array(
+            $this->cache[$subject][$managerName] = array(
+                'managerName' => $managerName,
                 'isolation' => $pattern['isolation'],
                 'propagation' => $pattern['propagation'],
                 'noRollbackFor' => $pattern['noRollbackFor'],
-                'subrequest' => $pattern['subrequest'],
+                'methods' => $pattern['methods'],
             );
         }
     }
