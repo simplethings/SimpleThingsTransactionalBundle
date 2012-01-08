@@ -55,7 +55,7 @@ class ScopeHandler
 
     public function getNestingLevel()
     {
-        return $this->level;
+        return $this->currentLevel;
     }
 }
 
