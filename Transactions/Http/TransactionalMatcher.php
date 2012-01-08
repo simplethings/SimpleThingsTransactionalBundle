@@ -12,11 +12,12 @@
  * to kontakt@beberlei.de so I can send you a copy immediately.
  */
 
-namespace SimpleThings\TransactionalBundle\Transactions;
+namespace SimpleThings\TransactionalBundle\Transactions\Http;
 
 use Symfony\Component\HttpFoundation\Request;
 use Doctrine\Common\Annotations\Reader;
 use SimpleThings\TransactionalBundle\TransactionException;
+use SimpleThings\TransactionalBundle\Transactions\TransactionDefinition;
 
 /**
  * TransactionalMatcher finds the transaction definitions for matched

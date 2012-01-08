@@ -18,19 +18,9 @@ use SimpleThings\TransactionalBundle\TransactionException;
 abstract class AbstractTransactionManager implements TransactionManagerInterface
 {
     /**
-     * @var SplStack
+     * @var array
      */
     private $transactions = array();
-
-    /**
-     * @var TransactionStatus
-     */
-    private $currentTxStatus;
-
-    public function __construct()
-    {
-        $this->transactions = new \SplObjectStorage();
-    }
 
     abstract protected function doBeginTransaction(TransactionDefinition $def);
 
@@ -41,9 +31,11 @@ abstract class AbstractTransactionManager implements TransactionManagerInterface
     protected function beginTransaction(TransactionDefinition $def)
     {
         $status = $this->doBeginTransaction($def);
-        $this->transactions->attach($status);
-        $this->transactions[$status] = $def;
-        $this->currentTxStatus = $status;
+        $oid = spl_object_hash($status);
+        $this->transactions[$oid] = array(
+            'status' => $status,
+            'def' => $def,
+        );
         return $status;
     }
 
@@ -85,43 +77,42 @@ abstract class AbstractTransactionManager implements TransactionManagerInterface
 
     public function commit(TransactionStatus $status)
     {
-        if ($status->isCompleted()) {
-            throw new TransactionException("Cannot commit an already completed transaction.");
-        } else if (!$this->transactions->contains($status)) {
-            throw new TransactionException("Cannot commit a detached transaction. It may have been committed before or belongs to another transaction manager");
-        }
-
         if ($status->isRollBackOnly()) {
             return $this->rollBack($status);
         }
 
+        if ($status->isCompleted()) {
+            throw new TransactionException("Cannot commit an already completed transaction.");
+        } else if (!isset($this->transactions[spl_object_hash($status)])) {
+            throw new TransactionException("Cannot commit a detached transaction. It may have been committed before or belongs to another transaction manager");
+        }
+
         $this->doCommit($status);
-        $this->transactions->detach($status);
+        unset($this->transactions[spl_object_hash($status)]);
     }
 
     public function rollBack(TransactionStatus $status)
     {
         if ($status->isCompleted()) {
             throw new TransactionException("Cannot rollback an already completed transaction.");
-        } else if (!$this->transactions->contains($status)) {
+        } else if (!isset($this->transactions[spl_object_hash($status)])) {
             throw new TransactionException("Cannot rollback a detached transaction. It may have been committed/rollbacked before or belongs to another transaction manager");
         }
 
         $this->doRollBack($status);
-        $this->transactions->detach($status);
+        unset($this->transactions[spl_object_hash($status)]);
     }
 
     private function getCurrentTransaction()
     {
-        return $this->currentTxStatus;
+        $tx = end($this->transactions);
+        return $tx['status'];
     }
 
     private function getCurrentTransactionDef()
     {
-        if ($this->currentTxStatus) {
-            return $this->transactions[$this->currentTxStatus];
-        }
-        return null;
+        $tx = end($this->transactions);
+        return $tx['def'];
     }
 }
 

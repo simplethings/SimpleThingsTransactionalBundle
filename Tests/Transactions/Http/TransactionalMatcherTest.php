@@ -1,10 +1,10 @@
 <?php
 
-namespace SimpleThings\TransactionalBundle\Tests\Transactions;
+namespace SimpleThings\TransactionalBundle\Tests\Transactions\Http;
 
 use Symfony\Component\HttpFoundation\Request;
-use SimpleThings\TransactionalBundle\Annotations\Transactional;
-use SimpleThings\TransactionalBundle\Transactions\TransactionalMatcher;
+use SimpleThings\TransactionalBundle\Transactions\Annotations\Transactional;
+use SimpleThings\TransactionalBundle\Transactions\Http\TransactionalMatcher;
 use SimpleThings\TransactionalBundle\Transactions\TransactionDefinition;
 
 class TransactionalMatcherTest extends \PHPUnit_Framework_TestCase
@@ -23,7 +23,6 @@ class TransactionalMatcherTest extends \PHPUnit_Framework_TestCase
             'isolation' => TransactionDefinition::ISOLATION_DEFAULT,
             'propagation' => TransactionDefinition::PROPAGATION_REQUIRED,
             'noRollbackFor' => array(),
-            'subrequest' => false,
         );
 
         $matcher = new TransactionalMatcher(array($pattern), array(), $this->reader);
@@ -119,14 +118,12 @@ class TransactionalMatcherTest extends \PHPUnit_Framework_TestCase
             'isolation' => TransactionDefinition::ISOLATION_DEFAULT,
             'propagation' => TransactionDefinition::PROPAGATION_REQUIRED,
             'noRollbackFor' => array(),
-            'subrequest' => false,
         );
         $this->reader->expects($this->once())
             ->method('getClassAnnotation')
             ->will($this->returnValue(
                 new Transactional(array(
                     'methods' => array('GET'),
-                    'subrequest' => true,
                     'conn' => array('orm.default'),
                 ))
             ));
@@ -142,7 +139,7 @@ class TransactionalMatcherTest extends \PHPUnit_Framework_TestCase
         return array(
             array('.*', 'POST', true, false),
             array('SimpleThings\\\\(.+)Controller::(.+)Action', 'POST', true, false),
-            array('SimpleThings\\\\TransactionalBundle\\\\Tests\\\\Transactions\\\\TestController::fooAction', 'POST', true, false),
+            array('SimpleThings\\\\TransactionalBundle\\\\Tests\\\\Transactions\\\\Http\\\\TestController::fooAction', 'POST', true, false),
             array('.*', 'GET', true, true),
             array('SimpleThings\\\\(.+)Controller::barAction', 'POST', false, false),
         );
