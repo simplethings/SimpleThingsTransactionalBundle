@@ -22,6 +22,16 @@ abstract class AbstractTransactionManager implements TransactionManagerInterface
      */
     private $transactions = array();
 
+    /**
+     * @var ScopeHandler
+     */
+    private $scope;
+
+    public function __construct(ScopeHandler $scope)
+    {
+        $this->scope = $scope;
+    }
+
     abstract protected function doBeginTransaction(TransactionDefinition $def);
 
     abstract protected function doCommit(TransactionStatus $def);
@@ -43,6 +53,7 @@ abstract class AbstractTransactionManager implements TransactionManagerInterface
     {
         switch ($def->getPropagation()) {
             case TransactionDefinition::PROPAGATION_REQUIRES_NEW:
+                $this->scope->enterScope();
                 $status = $this->beginTransaction($def);
                 break;
             case TransactionDefinition::PROPAGATION_NEVER:
@@ -87,8 +98,8 @@ abstract class AbstractTransactionManager implements TransactionManagerInterface
             throw new TransactionException("Cannot commit a detached transaction. It may have been committed before or belongs to another transaction manager");
         }
 
+        $this->cleanupAfterTransaction($status);
         $this->doCommit($status);
-        unset($this->transactions[spl_object_hash($status)]);
     }
 
     public function rollBack(TransactionStatus $status)
@@ -99,7 +110,17 @@ abstract class AbstractTransactionManager implements TransactionManagerInterface
             throw new TransactionException("Cannot rollback a detached transaction. It may have been committed/rollbacked before or belongs to another transaction manager");
         }
 
+        $this->cleanupAfterTransaction($status);
         $this->doRollBack($status);
+    }
+
+    private function cleanupAfterTransaction($status)
+    {
+        $def = $this->transactions[spl_object_hash($status)]['def'];
+        if ($def->getPropagation() == TransactionDefinition::PROPAGATION_REQUIRES_NEW) {
+            $this->scope->leaveScope();
+        }
+
         unset($this->transactions[spl_object_hash($status)]);
     }
 

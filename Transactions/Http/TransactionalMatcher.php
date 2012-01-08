@@ -82,7 +82,12 @@ class TransactionalMatcher
         }
 
         $definitions = array();
+        $requireNew = false;
         foreach ($this->cache[$subject] as $connectionName => $definition) {
+            if ($definition['propagation'] == TransactionDefinition::PROPAGATION_REQUIRES_NEW) {
+
+            }
+
             $definitions[] = new TransactionDefinition(
                 $definition['managerName'],
                 $definition['propagation'],
@@ -136,18 +141,17 @@ class TransactionalMatcher
 
     private function storeMatch($subject, $pattern)
     {
-        foreach ($pattern['conn'] AS $managerName) {
-            if (isset($this->cache[$subject][$managerName])) {
-                throw TransactionException::duplicateConnectionMatch($managerName, $pattern);
-            }
+        $managerName = $pattern['conn'];
+        if (isset($this->cache[$subject][$managerName])) {
+            throw TransactionException::duplicateConnectionMatch($managerName, $pattern);
+        }
 
-            $this->cache[$subject][$managerName] = array(
+        $this->cache[$subject][$managerName] = array(
                 'managerName' => $managerName,
                 'isolation' => $pattern['isolation'],
                 'propagation' => $pattern['propagation'],
                 'noRollbackFor' => $pattern['noRollbackFor'],
                 'methods' => $pattern['methods'],
-            );
-        }
+                );
     }
 }

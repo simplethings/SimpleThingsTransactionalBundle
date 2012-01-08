@@ -15,8 +15,29 @@
 namespace SimpleThings\TransactionalBundle;
 
 use Symfony\Component\HttpKernel\Bundle\Bundle;
+use Symfony\Component\DependencyInjection\ContainerBuilder;
+use Symfony\Component\DependencyInjection\Scope;
+use SimpleThings\TransactionalBundle\DependencyInjection\CompilerPass\TransactionalScopePass;
+use SimpleThings\TransactionalBundle\DependencyInjection\CompilerPass\DetectConnectionsPass;
 
 class SimpleThingsTransactionalBundle extends Bundle
 {
-    
+    public function boot()
+    {
+        $this->getContainer()->enterScope('transactional');
+    }
+
+    public function build(ContainerBuilder $container)
+    {
+        parent::build($container);
+
+        $container->addScope(new Scope('transactional'));
+        $container->addCompilerPass(new TransactionalScopePass());
+        $container->addCompilerPass(new DetectConnectionsPass());
+    }
+
+    public function shutdown()
+    {
+        $this->getContainer()->leaveScope('transactional');
+    }
 }

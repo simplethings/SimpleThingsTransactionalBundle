@@ -14,6 +14,7 @@
 namespace SimpleThings\TransactionalBundle\Transactions;
 
 use Symfony\Component\DependencyInjection\ContainerInterface;
+use SimpleThings\TransactionalBundle\TransactionException;
 
 /**
  * Registry for mass-operations on transactions.
@@ -26,17 +27,25 @@ class TransactionsRegistry
 {
     private $container;
     private $connectionServices;
-    private $connections = array();
 
     public function __construct(ContainerInterface $container, $connectionServices = array())
     {
         $this->container = $container;
+        $this->connectionServices = $connectionServices;
     }
 
     public function getTransactions(array $definitions)
     {
         $txManagers = array();
+        $requiresNew = false;
         foreach ($definitions as $def) {
+            if ($def->getPropagation() == TransactionDefinition::PROPAGATION_REQUIRES_NEW) {
+                if ($requiresNew) {
+                    throw new TransactionException("Cannot have more than one connection to require a new transaction per request.");
+                }
+                $requiresNew = true;
+            }
+
             $managerName = $def->getManagerName();
             if ($txStatus = $this->getTransactionManager($managerName)->getTransaction($def)) {
                 $txManagers[$managerName] = $txStatus;
@@ -47,14 +56,14 @@ class TransactionsRegistry
 
     public function commit(array $statuses)
     {
-        foreach ($txManagers AS $managerName => $txStatus) {
+        foreach (array_reverse($txManagers) AS $managerName => $txStatus) {
             $this->getTransactionManager($managerName)->commit($txStatus);
         }
     }
 
     public function rollBack(array $statuses)
     {
-        foreach ($txManagers AS $managerName => $txStatus) {
+        foreach (array_reverse($txManagers) AS $managerName => $txStatus) {
             $this->getTransactionManager($managerName)->rollBack($txStatus);
         }
     }

@@ -19,7 +19,7 @@ class TransactionalMatcherTest extends \PHPUnit_Framework_TestCase
         $pattern = array(
             'pattern' => $pattern,
             'methods' => array('POST', 'PUT'),
-            'conn' => array('orm.default'),
+            'conn' => 'orm.default',
             'isolation' => TransactionDefinition::ISOLATION_DEFAULT,
             'propagation' => TransactionDefinition::PROPAGATION_REQUIRED,
             'noRollbackFor' => array(),
@@ -56,7 +56,7 @@ class TransactionalMatcherTest extends \PHPUnit_Framework_TestCase
             ->will($this->returnValue(
                 new Transactional(array(
                     'methods' => array('GET'),
-                    'conn' => array('orm.default'),
+                    'conn' => 'orm.default',
                 ))
             ));
 
@@ -90,7 +90,7 @@ class TransactionalMatcherTest extends \PHPUnit_Framework_TestCase
             ->will($this->returnValue(
                 new Transactional(array(
                     'methods' => array('GET'),
-                    'conn' => array('orm.default'),
+                    'conn' => 'orm.default',
                 ))
             ));
 
@@ -114,7 +114,7 @@ class TransactionalMatcherTest extends \PHPUnit_Framework_TestCase
         $pattern = array(
             'pattern' => '.*',
             'methods' => array('GET'),
-            'conn' => array('orm.default'),
+            'conn' => 'orm.default',
             'isolation' => TransactionDefinition::ISOLATION_DEFAULT,
             'propagation' => TransactionDefinition::PROPAGATION_REQUIRED,
             'noRollbackFor' => array(),
@@ -124,7 +124,7 @@ class TransactionalMatcherTest extends \PHPUnit_Framework_TestCase
             ->will($this->returnValue(
                 new Transactional(array(
                     'methods' => array('GET'),
-                    'conn' => array('orm.default'),
+                    'conn' => 'orm.default',
                 ))
             ));
 

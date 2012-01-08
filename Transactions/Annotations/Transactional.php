@@ -22,7 +22,7 @@ use Doctrine\Common\Annotations\Annotation;
 class Transactional extends Annotation
 {
     /**
-     * @var array
+     * @var string
      */
     public $conn = null;
     /**

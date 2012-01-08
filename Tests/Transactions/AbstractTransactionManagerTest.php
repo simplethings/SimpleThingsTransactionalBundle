@@ -23,7 +23,8 @@ class AbstractTransactionManagerTest extends \PHPUnit_Framework_TestCase
     {
         $this->manager = $this->getMock(
             'SimpleThings\TransactionalBundle\Transactions\AbstractTransactionManager',
-            array('doBeginTransaction', 'doCommit', 'doRollBack')
+            array('doBeginTransaction', 'doCommit', 'doRollBack'),
+            array($this->getMock('SimpleThings\TransactionalBundle\Transactions\ScopeHandler', array(), array(), '', false))
         );
     }
 

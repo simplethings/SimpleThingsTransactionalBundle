@@ -25,9 +25,9 @@ creates a service that implements a transactions manager interface:
 
     interface TransactionManagerInterface
     {
-        function beginTransaction();
-        function commit();
-        function rollBack();
+        function getTransaction(TransactionDefinition $def);
+        function commit(TransactionStatus $status);
+        function rollBack(TransactionStatus $status);
     }
 
 With the transactional bundle the following workflow is applied to an action that is marked
@@ -56,7 +56,7 @@ is as simple as configuring the transactional managers name in the app/config/co
     simple_things_transactional:
         auto_transactional: true
         defaults:
-            conn: ["orm.default"]
+            conn: "orm.default"
 
 With this configuration every POST, PUT, DELETE and PATCH request is wrapped inside a transaction of the given connection.
 There is no way to disable this behavior except by throwing an exception. GET requests that need to write a transaction
@@ -73,7 +73,7 @@ If a transaction is started for a connection multiple times then an exception is
 
     simple_things_transactional:
         defaults:
-            conn: ["mongodb.default"]
+            conn: "mongodb.default"
             methods: ["POST", "PUT", "DELETE", "PATCH"]
         patterns:
             fos_user:
@@ -81,66 +81,85 @@ If a transaction is started for a connection multiple times then an exception is
                 # not giving conn: uses the default
                 propagation: REQUIRES_NEW
                 noRollbackFor: ["NotFoundHttpException"]
-                subrequest: true
             acme:
                 pattern: "Acme(.*)"
-                conn: ["orm.default", "couchdb.default"]
-                subrequest: false
+                conn: "orm.default"
             acme_logging:
                 pattern: "Acme\DemoBundle\Controller\IndexController::logAction"
-                conn: ["dbal.other"]
+                isolation: READ_UNCOMMITTED
+                conn: "orm.other"
                 methods: ["GET"]
 
 ### Annotations
 
-You can also configure transactional behavior with annotations. The configuration for annotations is as simple as:
+You can also configure transactional behavior with annotations. Enabling annotations is simple:
 
     simple_things_transactional:
         annotations: true
 
-The previous  `Acme\DemoBundle\Controller\IndexController` then looks like:
+The previous  `Acme\DemoBundle\Controller\IndexController` can then be configured by adding:
 
     namespace Acme\DemoBundle\Controller;
 
-    use SimpleThings\TransactionalBundle\Annotations AS Tx;
+    use SimpleThings\TransactionalBundle\Transactions\Annotations AS Tx;
 
     /**
-     * @Tx\Transactional(conn={"orm.default", "couchdb.default"})
+     * @Tx\Transactional(conn="orm.default")
      */
     class IndexController
     {
+        public function indexAction()
+        {
+
+        }
+
         /**
-         * @Tx\Transactional(conn={"orm.other"}, methods: {"GET"})
+         * @Tx\Transactional(conn="orm.other", methods: {"GET"})
          */
         public function demoAction()
         {
-
+            // both orm.default and orm.other are transactions here
         }
     }
 
-## Example
+## Doctrine ORM Example
 
-Using the previous routes as example here is a sample action that does not require any calls to EntityManager::flush anymore.
+This example assumes:
+
+* You are using FrameworkExtraBundle and converters
+* You automatically use HTTP semantics for tx management.
+
+See this controller for a Form Edit/Display.
+
+* It will commit all the changes automatically when a post request occurs.
+* To rollback the transaction when a form error occurs the transactional
+  bundle automatically registers a form validator and sets all current
+  transactions to 'rollback only'.
+
+Here is the code:
 
     class PostController extends Controller
     {
-        public function editAction($id)
+        /**
+         * @ParamConverter("post", class="AcmeBlogBundle:Post")
+         * @Template
+         */
+        public function editAction(Post $post, Request $request)
         {
-            $em = $this->container->get('doctrine.orm.default_entity_manager');
-            $post = $em->find('Post', $id);
+            $form = $this->createForm(new PostType(), $post);
 
-            if ($this->container->get('request')->getMethod() == 'POST') {
-                $post->modifyState();
-                // no need to call $em->flush(), the flush is executed in a transactional wrapper
+            if ($request->getMethod() == 'POST') {
+                $form->bindRequest($request);
 
-                return $this->redirect($this->generateUrl("view_post", array("id" => $post->getId()));
+                if ($form->isValid()) {
+                    return $this->redirect($this->generateUrl("view_post", array("id" => $post->getId()));
+                }
             }
 
-            return $this->render("MyBlogBundle:Post:edit.html.twig", array());
+            return array('form' => $form->createView());
         }
     }
 
-`EntityManager#flush()` is only called when the requet is using the POST-method.
 
 ## Installation
 
@@ -175,4 +194,3 @@ Using the previous routes as example here is a sample action that does not requi
 
 * Implement Propagation
 * Implement Isolation
-* Try to evaluate if hooking into exception_handler is a killing exceptions from controllers more gracefully and not having them loose the stack trace.
