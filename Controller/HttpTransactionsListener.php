@@ -15,11 +15,12 @@
 namespace SimpleThings\TransactionalBundle\Controller;
 
 use Symfony\Component\HttpKernel\Event\FilterControllerEvent;
+use Symfony\Component\HttpKernel\Event\FilterResponseEvent;
+use Symfony\Component\HttpKernel\Event\GetResponseForExceptionEvent;
 use Symfony\Component\HttpKernel\HttpKernelInterface;
 use Symfony\Component\DependencyInjection\ContainerInterface;
-use SimpleThings\TransactionalBundle\Controller\TransactionalControllerWrapper;
-use SimpleThings\TransactionalBundle\Transactions\TransactionalMatcher;
 use Symfony\Component\HttpKernel\Log\LoggerInterface;
+use SimpleThings\TransactionalBundle\Transactions\TransactionalMatcher;
 
 /**
  * Transactional controller listener.
@@ -109,7 +110,7 @@ class HttpTransactionsListener
     private function commit($txManagers)
     {
         foreach ($txManagers AS $managerName => $txStatus) {
-            $this->getTransaction($managerName)->commit($txStatus);
+            $this->getTransactionManager($managerName)->commit($txStatus);
         }
 
         if ($this->logger) {
@@ -120,7 +121,7 @@ class HttpTransactionsListener
     private function rollBack($txManagers)
     {
         foreach ($txManagers AS $managerName => $txStatus) {
-            $this->getTransaction($managerName)->rollBack($txStatus);
+            $this->getTransactionManager($managerName)->rollBack($txStatus);
         }
 
         if ($this->logger) {
