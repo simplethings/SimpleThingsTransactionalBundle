@@ -1,6 +1,6 @@
 <?php
 /**
- * SImpleThings TransactionalBundle
+ * SimpleThings TransactionalBundle
  *
  * LICENSE
  *
@@ -11,20 +11,17 @@
  * to kontakt@beberlei.de so I can send you a copy immediately.
  */
 
-namespace SimpleThingsTransactionalBundle\Doctrine;
+namespace SimpleThings\TransactionalBundle\Doctrine;
 
 use SimpleThings\TransactionalBundle\Transactions\TransactionStatus;
-use SimpleThings\TransactionalBundle\Transactions\TransactionDefinition;
-use Doctrine\Common\Persistence\ObjectManager;
 
-class ObjectTransactionStatus implements TransactionStatus
+class OrmTransactionStatus implements TransactionStatus
 {
     private $def;
     private $manager;
-    private $rollbackOnly = false;
     private $completed = false;
 
-    public function __construct(ObjectManager $manager, TransactionDefinition $def)
+    public function __construct(EntityManager $manager, TransactionDefinition $def)
     {
         $this->manager = $manager;
         $this->def = $def;
@@ -51,7 +48,7 @@ class ObjectTransactionStatus implements TransactionStatus
      */
     public function isRollBackOnly()
     {
-        return $this->rollbackOnly;
+        return $this->manager->getConnection()->isRollbackOnly();
     }
 
     /**
@@ -61,7 +58,7 @@ class ObjectTransactionStatus implements TransactionStatus
      */
     public function setRollBackOnly()
     {
-        $this->rollbackOnly = true;
+        $this->manager->getConnection()->setRollbackOnly(true);
     }
 
     /**
@@ -93,6 +90,7 @@ class ObjectTransactionStatus implements TransactionStatus
     {
         $this>completed = true;
         $this->manager->flush();
+        $this->manager->commit();
     }
 
     /**
@@ -103,6 +101,7 @@ class ObjectTransactionStatus implements TransactionStatus
     public function rollBack()
     {
         $this->completed = true;
+        $this->manager->rollBack();
         $this->manager->clear();
     }
 }

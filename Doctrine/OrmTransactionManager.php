@@ -13,18 +13,7 @@
 
 namespace SimpleThings\TransactionalBundle\Doctrine;
 
-use SimpleThings\TransactionalBundle\TransactionsRegistry;
-
-/**
- * Doctrine Object TransactionManager for any Doctrine ObjectManager.
- *
- * The commit operation of this manager directly translates to the flush
- * operation of the Object Manager, synchronizing any pending changes to the
- * database. Creating a new transaction when one already exists translates to
- * resetting the service and reconstituting the "previous" manager when the
- * transaction is committed or rolled back.
- */
-class ObjectTransactionManager extends AbstractTransactionManager
+class OrmTransactionManager extends AbstractTransactionManager
 {
     private $container;
 
@@ -36,6 +25,7 @@ class ObjectTransactionManager extends AbstractTransactionManager
     protected function doBeginTransaction(TransactionDefinition $def)
     {
         $manager = $container->get('simple_things_transactional.connections.' . $def->getManagerName());
+        $manager->beginTransaction();
         return $this->createTxStatus($manager, $def);
     }
 
@@ -51,7 +41,7 @@ class ObjectTransactionManager extends AbstractTransactionManager
 
     protected function createTxStatus($manager, $def)
     {
-        return new ObjectTransactionStatus($manager, $def);
+        return new OrmTransactionStatus($manager, $def);
     }
 }
 

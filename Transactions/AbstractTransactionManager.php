@@ -62,6 +62,7 @@ abstract class AbstractTransactionManager implements TransactionManagerInterface
                 }
                 return null;
             case TransactionDefinition::PROPAGATION_REQUIRED:
+                $this->scope->increaseNestingLevel();
                 $openTransactionDef = $this->getCurrentTransactionDef();
                 $status = $this->getCurrentTransaction();
                 if ($openTransactionDef) {
@@ -80,6 +81,7 @@ abstract class AbstractTransactionManager implements TransactionManagerInterface
                 break;
             case TransactionDefinition::PROPAGATION_SUPPORTS:
             default:
+                $this->scope->increaseNestingLevel();
                 $status = $this->getCurrentTransaction();
                 break;
         }
@@ -98,7 +100,16 @@ abstract class AbstractTransactionManager implements TransactionManagerInterface
             throw new TransactionException("Cannot commit a detached transaction. It may have been committed before or belongs to another transaction manager");
         }
 
+        $this->scope->decreaseNestingLevel();
+        if ($this->scope->getNestingLevel() > 0) {
+            return;
+        }
+
         $this->cleanupAfterTransaction($status);
+        if ($status->isReadOnly()) {
+            return;
+        }
+
         $this->doCommit($status);
     }
 
@@ -110,7 +121,16 @@ abstract class AbstractTransactionManager implements TransactionManagerInterface
             throw new TransactionException("Cannot rollback a detached transaction. It may have been committed/rollbacked before or belongs to another transaction manager");
         }
 
+        $this->scope->decreaseNestingLevel();
+        if ($this->scope->getNestingLevel() > 0) {
+            return;
+        }
+
         $this->cleanupAfterTransaction($status);
+        if ($status->isReadOnly()) {
+            return;
+        }
+
         $this->doRollBack($status);
     }
 

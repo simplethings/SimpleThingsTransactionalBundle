@@ -79,20 +79,20 @@ class TransactionalMatcher
             $this->cache[$subject] = array();
             $this->matchPatterns($subject);
             $this->matchAnnotations($subject, $controller, $action);
+
+            if (!$this->cache[$subject] && $this->defaults) {
+                $this->cache[$subject][$this->defaults['conn']] = $this->defaults;
+            }
         }
 
         $definitions = array();
         $requireNew = false;
         foreach ($this->cache[$subject] as $connectionName => $definition) {
-            if ($definition['propagation'] == TransactionDefinition::PROPAGATION_REQUIRES_NEW) {
-
-            }
-
             $definitions[] = new TransactionDefinition(
-                $definition['managerName'],
+                $definition['conn'],
                 $definition['propagation'],
                 $definition['isolation'],
-                ! in_array($method, $definition['methods'])
+                ! in_array($method, (array)$definition['methods'])
             );
         }
 
@@ -141,13 +141,13 @@ class TransactionalMatcher
 
     private function storeMatch($subject, $pattern)
     {
-        $managerName = $pattern['conn'];
-        if (isset($this->cache[$subject][$managerName])) {
-            throw TransactionException::duplicateConnectionMatch($managerName, $pattern);
+        $conn = $pattern['conn'];
+        if (isset($this->cache[$subject][$conn])) {
+            throw TransactionException::duplicateConnectionMatch($conn, $pattern);
         }
 
-        $this->cache[$subject][$managerName] = array(
-                'managerName' => $managerName,
+        $this->cache[$subject][$conn] = array(
+                'conn' => $conn,
                 'isolation' => $pattern['isolation'],
                 'propagation' => $pattern['propagation'],
                 'noRollbackFor' => $pattern['noRollbackFor'],

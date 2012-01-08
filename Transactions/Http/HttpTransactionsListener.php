@@ -79,6 +79,7 @@ class HttpTransactionsListener
     {
         $request = $event->getRequest();
         $ex = $event->getException();
+        var_dump($ex->getMessage());
 
         if (!$request->attributes->has('_transactions')) {
             return;

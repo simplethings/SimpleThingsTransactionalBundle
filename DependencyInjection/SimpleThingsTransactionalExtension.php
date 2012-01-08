@@ -18,8 +18,6 @@ use Symfony\Component\DependencyInjection\ContainerBuilder;
 use Symfony\Component\DependencyInjection\Loader\XmlFileLoader;
 use Symfony\Component\HttpKernel\DependencyInjection\Extension;
 use Symfony\Component\Config\FileLocator;
-use Symfony\Component\DependencyInjection\Reference;
-use Symfony\Component\DependencyInjection\DefinitionDecorator;
 use SimpleThings\TransactionalBundle\Transactions\TransactionDefinition;
 
 class SimpleThingsTransactionalExtension extends Extension
@@ -74,40 +72,5 @@ class SimpleThingsTransactionalExtension extends Extension
         $def = $builder->getDefinition('simple_things_transactional.transactional_matcher');
         $def->setArguments($args);
 
-        if ($builder->hasParameter('doctrine.connections')) {
-            foreach ($builder->getParameter('doctrine.connections') AS $alias => $service) {
-                $builder->setDefinition(
-                    'simple_things_transactional.tx.dbal.'.$alias,
-                    new DefinitionDecorator('simple_things_transactional.manager.dbal')
-                )->setArguments(array(new Reference($service)));
-            }
-        }
-
-        if ($builder->hasParameter('doctrine.entity_managers')) {
-            foreach ($builder->getParameter('doctrine.entity_managers') AS $alias => $service) {
-                $builder->setDefinition(
-                    'simple_things_transactional.tx.orm.'.$alias,
-                    new DefinitionDecorator('simple_things_transactional.manager.orm')
-                )->setArguments(array(new Reference('doctrine'), $alias));
-            }
-        }
-
-        if ($builder->hasParameter('doctrine_couchdb.document_managers')) {
-            foreach ($builder->getParameter('doctrine_couchdb.document_managers') AS $alias => $service) {
-                $builder->setDefinition(
-                    'simple_things_transactional.tx.couchdb.'.$alias,
-                    new DefinitionDecorator('simple_things_transactional.manager.couchdb')
-                )->setArguments(array(new Reference($service)));
-            }
-        }
-
-        if ($builder->hasParameter('doctrine_mongodb.document_managers')) {
-            foreach ($builder->getParameter('doctrine_mongodb.document_managers') AS $alias => $service) {
-                $builder->setDefinition(
-                    'simple_things_transactional.tx.mongodb.'.$alias,
-                    new DefinitionDecorator('simple_things_transactional.manager.mongodb')
-                )->setArguments(array(new Reference($service)));
-            }
-        }
     }
 }

@@ -56,14 +56,14 @@ class TransactionsRegistry
 
     public function commit(array $statuses)
     {
-        foreach (array_reverse($txManagers) AS $managerName => $txStatus) {
+        foreach (array_reverse($statuses) AS $managerName => $txStatus) {
             $this->getTransactionManager($managerName)->commit($txStatus);
         }
     }
 
     public function rollBack(array $statuses)
     {
-        foreach (array_reverse($txManagers) AS $managerName => $txStatus) {
+        foreach (array_reverse($statuses) AS $managerName => $txStatus) {
             $this->getTransactionManager($managerName)->rollBack($txStatus);
         }
     }
