@@ -20,7 +20,6 @@ use Symfony\Component\HttpKernel\Event\GetResponseForExceptionEvent;
 use Symfony\Component\HttpKernel\HttpKernelInterface;
 use Symfony\Component\HttpKernel\Log\LoggerInterface;
 use Symfony\Component\HttpFoundation\Exceptions\NotFoundHttpException;
-use SimpleThings\TransactionalBundle\Transactions\TransactionalMatcher;
 use SimpleThings\TransactionalBundle\Transactions\TransactionsRegistry;
 
 /**

@@ -13,11 +13,41 @@
 
 namespace SimpleThings\TransactionalBundle\Tests\Transactions\Http;
 
+use SimpleThings\TransactionalBundle\Transactions\Http\HttpTransactionsListener;
+use SimpleThings\TransactionalBundle\Transactions\TransactionDefinition;
+use Symfony\Component\HttpFoundation\Request;
+use Symfony\Component\HttpKernel\Event\FilterControllerEvent;
+use Symfony\Component\HttpKernel\Event\FilterResponseEvent;
+use Symfony\Component\HttpKernel\Event\GetResponseForExceptionEvent;
+
 class HttpTransactionsListenerTest extends \PHPUnit_Framework_TestCase
 {
+    private $matcher;
+    private $registry;
+    private $listener;
+
     public function setUp()
     {
+        $this->matcher = $this->getMock('SimpleThings\TransactionalBundle\Transactions\Http\TransactionalMatcher', array(), array(), '', false);
+        $this->registry = $this->getMock('SimpleThings\TransactionalBundle\Transactions\TransactionsRegistry', array(), array(), '', false);
+        $this->listener = new HttpTransactionsListener($this->registry, $this->matcher);
+    }
 
+    public function testOnCoreController()
+    {
+        $kernel = $this->getMock('Symfony\Component\HttpKernel\HttpKernelInterface');
+        $request = Request::create('/foo', 'POST');
+        $event = new FilterControllerEvent($kernel, array(__CLASS__, 'testOnCoreController'), $request, null);
+
+        $txStatus = $this->getMock('SimpleThings\TransactionalBundle\Transactions\TransactionStatus');
+        $def = new TransactionDefinition('name', 1, 1, false, array());
+
+        $this->matcher->expects($this->once())->method('match')->will($this->returnValue(array($def)));
+        $this->registry->expects($this->once())->method('getTransactions')->with($this->equalTo(array($def)))->will($this->returnValue(array($txStatus)));
+
+        $this->listener->onCoreController($event);
+
+        $this->assertSame(array($txStatus), $request->attributes->get('_transactions'));
     }
 }
 
