@@ -13,7 +13,9 @@
 
 namespace SimpleThings\TransactionalBundle\Doctrine;
 
-use SimpleThings\TransactionalBundle\TransactionsRegistry;
+use SimpleThings\TransactionalBundle\Transactions\TransactionStatus;
+use SimpleThings\TransactionalBundle\Transactions\TransactionDefinition;
+use SimpleThings\TransactionalBundle\Transactions\AbstractTransactionManager;
 
 /**
  * Doctrine Object TransactionManager for any Doctrine ObjectManager.
@@ -24,35 +26,39 @@ use SimpleThings\TransactionalBundle\TransactionsRegistry;
  * resetting the service and reconstituting the "previous" manager when the
  * transaction is committed or rolled back.
  */
-class ObjectTransactionManager extends AbstractTransactionManager
+class DBALTransactionManager extends AbstractTransactionManager
 {
     protected $container;
 
-    public function __construct($container)
+    public function __construct($container, $scopeHandler)
     {
         $this->container = $container;
+        parent::__construct($scopeHandler);
     }
 
-    protected function createTxStatus($manager, $def)
+    protected function createTxStatus($conn, $def)
     {
-        return new ObjectTransactionStatus($manager, $def);
+        return new DBALTransactionStatus($conn, $def);
     }
 
     protected function doBeginTransaction(TransactionDefinition $def)
     {
-        $manager = $this->container->get('simple_things_transactional.connections.' . $def->getManagerName());
-        return $this->createTxStatus($manager, $def);
+        $conn = $this->container->get('simple_things_transactional.connections.' . $def->getManagerName());
+        $conn->beginTransaction();
+        return $this->createTxStatus($conn, $def);
     }
 
     protected function doCommit(TransactionStatus $status)
     {
-        $manager = $status->getWrappedConnection();
-        $manager->flush();
+        $conn = $status->getWrappedConnection();
+        $conn->commit();
         $status->markCompleted();
     }
 
     protected function doRollBack(TransactionStatus $status)
     {
+        $conn = $status->getWrappedConnection();
+        $conn->rollback();
         $status->markCompleted();
     }
 }

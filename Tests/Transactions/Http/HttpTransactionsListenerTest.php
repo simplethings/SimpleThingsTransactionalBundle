@@ -42,12 +42,12 @@ class HttpTransactionsListenerTest extends \PHPUnit_Framework_TestCase
         $txStatus = $this->getMock('SimpleThings\TransactionalBundle\Transactions\TransactionStatus');
         $def = new TransactionDefinition('name', 1, 1, false, array());
 
-        $this->matcher->expects($this->once())->method('match')->will($this->returnValue(array($def)));
-        $this->registry->expects($this->once())->method('getTransactions')->with($this->equalTo(array($def)))->will($this->returnValue(array($txStatus)));
+        $this->matcher->expects($this->once())->method('match')->will($this->returnValue($def));
+        $this->registry->expects($this->once())->method('getTransaction')->with($this->equalTo($def))->will($this->returnValue($txStatus));
 
         $this->listener->onCoreController($event);
 
-        $this->assertSame(array($txStatus), $request->attributes->get('_transactions'));
+        $this->assertSame($txStatus, $request->attributes->get('_transaction'));
     }
 }
 

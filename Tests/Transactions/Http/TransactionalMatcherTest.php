@@ -21,22 +21,21 @@ class TransactionalMatcherTest extends \PHPUnit_Framework_TestCase
             'methods' => array('POST', 'PUT'),
             'conn' => 'orm.default',
             'isolation' => TransactionDefinition::ISOLATION_DEFAULT,
-            'propagation' => TransactionDefinition::PROPAGATION_REQUIRED,
+            'propagation' => TransactionDefinition::PROPAGATION_JOINED,
             'noRollbackFor' => array(),
         );
 
         $matcher = new TransactionalMatcher(array($pattern), array(), $this->reader);
         $controller = new TestController();
 
-        $definitions = $matcher->match($method, array($controller, 'fooAction'));
+        $definition = $matcher->match($method, array($controller, 'fooAction'));
 
         if ($matched) {
-            $this->assertInternalType('array', $definitions);
-            $this->assertCount(1, $definitions);
-            $this->assertEquals('orm.default', $definitions[0]->getManagerName());
-            $this->assertEquals($readOnly, $definitions[0]->getReadOnly());
+            $this->assertInstanceOf('SimpleThings\TransactionalBundle\Transactions\TransactionDefinition', $definition);
+            $this->assertEquals('orm.default', $definition->getManagerName());
+            $this->assertEquals($readOnly, $definition->getReadOnly());
         } else {
-            $this->assertCount(0, $definitions);
+            $this->assertFalse($definition);
         }
     }
 
@@ -44,7 +43,7 @@ class TransactionalMatcherTest extends \PHPUnit_Framework_TestCase
     {
         $defaults = array(
             'isolation' => TransactionDefinition::ISOLATION_DEFAULT,
-            'propagation' => TransactionDefinition::PROPAGATION_REQUIRED,
+            'propagation' => TransactionDefinition::PROPAGATION_JOINED,
             'noRollbackFor' => array(),
         );
 
@@ -64,19 +63,19 @@ class TransactionalMatcherTest extends \PHPUnit_Framework_TestCase
 
         $expectedDefinition = new TransactionDefinition(
             'orm.default',
-            TransactionDefinition::PROPAGATION_REQUIRED,
+            TransactionDefinition::PROPAGATION_JOINED,
             TransactionDefinition::ISOLATION_DEFAULT,
             false,
             array()
         );
-        $this->assertEquals($expectedDefinition, $definition[0]);
+        $this->assertEquals($expectedDefinition, $definition);
     }
 
     public function testMatchMethodAnnotation()
     {
         $defaults = array(
             'isolation' => TransactionDefinition::ISOLATION_DEFAULT,
-            'propagation' => TransactionDefinition::PROPAGATION_REQUIRED,
+            'propagation' => TransactionDefinition::PROPAGATION_JOINED,
             'noRollbackFor' => array(),
         );
 
@@ -98,40 +97,12 @@ class TransactionalMatcherTest extends \PHPUnit_Framework_TestCase
 
         $expectedDefinition = new TransactionDefinition(
             'orm.default',
-            TransactionDefinition::PROPAGATION_REQUIRED,
+            TransactionDefinition::PROPAGATION_JOINED,
             TransactionDefinition::ISOLATION_DEFAULT,
             false,
             array()
         );
-        $this->assertEquals($expectedDefinition, $definition[0]);
-    }
-
-    /**
-     * @expectedException \SimpleThings\TransactionalBundle\TransactionException
-     */
-    public function testThrowExceptionWhenStoreDuplicateConnectionMatch()
-    {
-        $pattern = array(
-            'pattern' => '.*',
-            'methods' => array('GET'),
-            'conn' => 'orm.default',
-            'isolation' => TransactionDefinition::ISOLATION_DEFAULT,
-            'propagation' => TransactionDefinition::PROPAGATION_REQUIRED,
-            'noRollbackFor' => array(),
-        );
-        $this->reader->expects($this->once())
-            ->method('getClassAnnotation')
-            ->will($this->returnValue(
-                new Transactional(array(
-                    'methods' => array('GET'),
-                    'conn' => 'orm.default',
-                ))
-            ));
-
-        $matcher = new TransactionalMatcher(array($pattern), array(), $this->reader);
-        $request = Request::create('/foo', 'GET');
-
-        $matcher->match($request, array(new TestController(), 'fooAction'));
+        $this->assertEquals($expectedDefinition, $definition);
     }
 
     public function getPatterns()

@@ -23,6 +23,11 @@ abstract class AbstractTransactionManager implements TransactionManagerInterface
     private $transactions = array();
 
     /**
+     * @var TrannsactionStatus
+     */
+    private $currentTransaction = null;
+
+    /**
      * @var ScopeHandler
      */
     private $scope;
@@ -41,48 +46,45 @@ abstract class AbstractTransactionManager implements TransactionManagerInterface
     protected function beginTransaction(TransactionDefinition $def)
     {
         $status = $this->doBeginTransaction($def);
-        $oid = spl_object_hash($status);
-        $this->transactions[$oid] = array(
-            'status' => $status,
-            'def' => $def,
-        );
+        $this->transactions[] = $this->currentTransaction = $status;
         return $status;
     }
 
     public function getTransaction(TransactionDefinition $def)
     {
         switch ($def->getPropagation()) {
-            case TransactionDefinition::PROPAGATION_REQUIRES_NEW:
+            case TransactionDefinition::PROPAGATION_ISOLATED:
                 $this->scope->enterScope();
                 $status = $this->beginTransaction($def);
                 break;
-            case TransactionDefinition::PROPAGATION_NEVER:
+            case TransactionDefinition::PROPAGATION_MANUAL:
                 if (count($this->transactions)) {
-                    throw new TransactionException("Controller does not want to run in transaction, but one is open.");
+                    throw new TransactionException("Controller does not want to run inside any transaction, but there is one open.");
                 }
                 return null;
-            case TransactionDefinition::PROPAGATION_REQUIRED:
+            case TransactionDefinition::PROPAGATION_JOINED:
+                $this->scope->enterScope();
                 $this->scope->increaseNestingLevel();
-                $openTransactionDef = $this->getCurrentTransactionDef();
-                $status = $this->getCurrentTransaction();
-                if ($openTransactionDef) {
-                    if ($def->getIsolationLevel() != $openTransactionDef->getIsolationLevel()) {
+                if ($this->currentTransaction) {
+                    if ($def->getIsolationLevel() != $this->currentTransaction->getIsolationLevel()) {
                         throw new TransactionException("Trying to re-use transaction that has different isolation level than the already active one.");
                     }
 
-                    if ($status->isReadOnly() && ! $def->getReadOnly()) {
+                    if ($this->currentTransaction->isReadOnly() && ! $def->getReadOnly()) {
                         throw new TransactionException("Cannot reuse readonly transaction when requesting a read/write transaction.");
                     }
-                }
-
-                if (!$status) {
+                    $status = $this->currentTransaction;
+                } else {
                     $status = $this->beginTransaction($def);
                 }
+
                 break;
             case TransactionDefinition::PROPAGATION_SUPPORTS:
             default:
-                $this->scope->increaseNestingLevel();
-                $status = $this->getCurrentTransaction();
+                if ($this->currentTransaction) {
+                    $this->scope->increaseNestingLevel();
+                }
+                $status = $this->currentTransaction;
                 break;
         }
         return $status;
@@ -96,8 +98,8 @@ abstract class AbstractTransactionManager implements TransactionManagerInterface
 
         if ($status->isCompleted()) {
             throw new TransactionException("Cannot commit an already completed transaction.");
-        } else if (!isset($this->transactions[spl_object_hash($status)])) {
-            throw new TransactionException("Cannot commit a detached transaction. It may have been committed before or belongs to another transaction manager");
+        } else if ($this->currentTransaction !== $status) {
+            throw new TransactionException("Cannot commit transaction that is not the currently active. The order of your transaction was messed up.");
         }
 
         $this->scope->decreaseNestingLevel();
@@ -117,8 +119,8 @@ abstract class AbstractTransactionManager implements TransactionManagerInterface
     {
         if ($status->isCompleted()) {
             throw new TransactionException("Cannot rollback an already completed transaction.");
-        } else if (!isset($this->transactions[spl_object_hash($status)])) {
-            throw new TransactionException("Cannot rollback a detached transaction. It may have been committed/rollbacked before or belongs to another transaction manager");
+        } else if ($this->currentTransaction !== $status) {
+            throw new TransactionException("Cannot commit transaction that is not the currently active. The order of your transaction was messed up.");
         }
 
         $this->scope->decreaseNestingLevel();
@@ -136,24 +138,9 @@ abstract class AbstractTransactionManager implements TransactionManagerInterface
 
     private function cleanupAfterTransaction($status)
     {
-        $def = $this->transactions[spl_object_hash($status)]['def'];
-        if ($def->getPropagation() == TransactionDefinition::PROPAGATION_REQUIRES_NEW) {
-            $this->scope->leaveScope();
-        }
-
-        unset($this->transactions[spl_object_hash($status)]);
-    }
-
-    private function getCurrentTransaction()
-    {
-        $tx = end($this->transactions);
-        return $tx['status'];
-    }
-
-    private function getCurrentTransactionDef()
-    {
-        $tx = end($this->transactions);
-        return $tx['def'];
+        $this->scope->leaveScope();
+        array_pop($this->transactions);
+        $this->currentTransaction = end($this->transactions);
     }
 }
 

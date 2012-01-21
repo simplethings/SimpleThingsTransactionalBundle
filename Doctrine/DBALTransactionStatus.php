@@ -1,6 +1,6 @@
 <?php
 /**
- * SimpleThings TransactionalBundle
+ * SImpleThings TransactionalBundle
  *
  * LICENSE
  *
@@ -14,17 +14,24 @@
 namespace SimpleThings\TransactionalBundle\Doctrine;
 
 use SimpleThings\TransactionalBundle\Transactions\TransactionStatus;
+use SimpleThings\TransactionalBundle\Transactions\TransactionDefinition;
+use Doctrine\DBAL\Connection;
 
-class OrmTransactionStatus implements TransactionStatus
+class DBALTransactionStatus implements TransactionStatus
 {
     private $def;
-    private $manager;
+    private $conn;
     private $completed = false;
 
-    public function __construct(EntityManager $manager, TransactionDefinition $def)
+    public function __construct(Connection $conn, TransactionDefinition $def)
     {
-        $this->manager = $manager;
+        $this->conn = $conn;
         $this->def = $def;
+    }
+
+    public function getIsolationLevel()
+    {
+        return $this->def->getIsolationLevel();
     }
 
     /**
@@ -48,7 +55,7 @@ class OrmTransactionStatus implements TransactionStatus
      */
     public function isRollBackOnly()
     {
-        return $this->manager->getConnection()->isRollbackOnly();
+        $this->conn->isRollBackOnly();
     }
 
     /**
@@ -58,7 +65,7 @@ class OrmTransactionStatus implements TransactionStatus
      */
     public function setRollBackOnly()
     {
-        $this->manager->getConnection()->setRollbackOnly(true);
+        $this->conn->setRollBackOnly(true);
     }
 
     /**
@@ -81,28 +88,14 @@ class OrmTransactionStatus implements TransactionStatus
         return false;
     }
 
-    /**
-     * Commit the transaction at this point.
-     *
-     * @return void
-     */
-    public function commit()
+    public function getWrappedConnection()
     {
-        $this>completed = true;
-        $this->manager->flush();
-        $this->manager->commit();
+        return $this->conn;
     }
 
-    /**
-     * Rollback the transaction at this point marking it as complete.
-     *
-     * @return void
-     */
-    public function rollBack()
+    public function markCompleted()
     {
         $this->completed = true;
-        $this->manager->rollBack();
-        $this->manager->clear();
     }
 }
 

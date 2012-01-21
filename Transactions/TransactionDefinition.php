@@ -14,40 +14,47 @@
 
 namespace SimpleThings\TransactionalBundle\Transactions;
 
+/**
+ * Describes the properties of a transaction
+ *
+ * @author Benjamin Eberlei <kontakt@beberlei.de>
+ */
 class TransactionDefinition
 {
     /**
      * A transaction definition of this kind doesnt mind if its nested inside
      * another transaction or not and does not start a transaction on its own.
      *
-     * This is the default behavior.
-     *
      * @var int
      */
     const PROPAGATION_SUPPORTS = 1;
 
     /**
-     * A transaction is required. If a transaction
-     * is already open for the transaction manager it will be re-used.
+     * Joins into an existing transaction or opens a new one.
+     *
+     * This is the default behavior.
      *
      * @var int
      */
-    const PROPAGATION_REQUIRED = 2;
+    const PROPAGATION_JOINED = 2;
 
     /**
      * A NEW transaction is required. When the transaction is finished the old
-     * higher level transaction will be restored.
+     * higher level transaction will be restored. This mode may open new
+     * database connection leading to additional resources being used by your
+     * script.
      *
      * @var int
      */
-    const PROPAGATION_REQUIRES_NEW = 3;
+    const PROPAGATION_ISOLATED = 3;
 
     /**
-     * Throws an exception if a transaction is open.
+     * Throws an exception if a transaction is open. Doesn't open a transaction
+     * itself. Leaves transaction management to the user.
      *
      * @var int
      */
-    const PROPAGATION_NEVER = 4;
+    const PROPAGATION_MANUAL = 4;
 
     const ISOLATION_DEFAULT = 0;
     const ISOLATION_READ_UNCOMMITTED = 1;

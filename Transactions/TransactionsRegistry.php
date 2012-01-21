@@ -23,10 +23,11 @@ use SimpleThings\TransactionalBundle\TransactionException;
  * request, however many are supported by this facade. The Transactions passed
  * here should always be in the same request, not from different requests.
  */
-class TransactionsRegistry
+class TransactionsRegistry implements TransactionManagerInterface
 {
     private $container;
     private $connectionServices;
+    private $transactions;
 
     public function __construct(ContainerInterface $container, $connectionServices = array())
     {
@@ -34,38 +35,24 @@ class TransactionsRegistry
         $this->connectionServices = $connectionServices;
     }
 
-    public function getTransactions(array $definitions)
+    public function getTransaction(TransactionDefinition $definition)
     {
-        $txManagers = array();
-        $requiresNew = false;
-        foreach ($definitions as $def) {
-            if ($def->getPropagation() == TransactionDefinition::PROPAGATION_REQUIRES_NEW) {
-                if ($requiresNew) {
-                    throw new TransactionException("Cannot have more than one connection to require a new transaction per request.");
-                }
-                $requiresNew = true;
-            }
-
-            $managerName = $def->getManagerName();
-            if ($txStatus = $this->getTransactionManager($managerName)->getTransaction($def)) {
-                $txManagers[$managerName] = $txStatus;
-            }
-        }
-        return $txManagers;
+        $managerName = $definition->getManagerName();
+        $status = $this->getTransactionManager($managerName)->getTransaction($definition);
+        $this->transactions[spl_object_hash($status)] = $managerName;
+        return $status;
     }
 
-    public function commit(array $statuses)
+    public function commit(TransactionStatus $status)
     {
-        foreach (array_reverse($statuses) AS $managerName => $txStatus) {
-            $this->getTransactionManager($managerName)->commit($txStatus);
-        }
+        $managerName = $this->transactions[spl_object_hash($status)];
+        $this->getTransactionManager($managerName)->commit($status);
     }
 
-    public function rollBack(array $statuses)
+    public function rollBack(TransactionStatus $status)
     {
-        foreach (array_reverse($statuses) AS $managerName => $txStatus) {
-            $this->getTransactionManager($managerName)->rollBack($txStatus);
-        }
+        $managerName = $this->transactions[spl_object_hash($status)];
+        $this->getTransactionManager($managerName)->rollBack($status);
     }
 
     private function getTransactionManager($name)

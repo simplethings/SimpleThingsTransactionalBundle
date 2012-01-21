@@ -58,7 +58,7 @@ class TransactionalMatcher
      * Match if he current controller/action should be transactional or not.
      *
      * Important: Only Controller as services or Class#Action method
-     * controllers can be transactional.
+     * controllers can be transactional. Closures or function calls can't.
      *
      * @param string $method HTTP Method
      * @param mixed $controllerCallback
@@ -75,20 +75,20 @@ class TransactionalMatcher
 
         $subject = $class . "::" . $action;
 
-        if (!isset($this->cache[$subject][$method])) {
-            $this->cache[$subject] = array();
+        if (!isset($this->cache[$subject])) {
+            $this->cache[$subject] = false;
             $this->matchPatterns($subject);
             $this->matchAnnotations($subject, $controller, $action);
 
             if (!$this->cache[$subject] && $this->defaults) {
-                $this->cache[$subject][$this->defaults['conn']] = $this->defaults;
+                $this->cache[$subject] = $this->defaults;
             }
         }
 
-        $definitions = array();
-        $requireNew = false;
-        foreach ($this->cache[$subject] as $connectionName => $definition) {
-            $definitions[] = new TransactionDefinition(
+        if ($this->cache[$subject]) {
+            $definition = $this->cache[$subject];
+
+            return new TransactionDefinition(
                 $definition['conn'],
                 $definition['propagation'],
                 $definition['isolation'],
@@ -96,7 +96,7 @@ class TransactionalMatcher
             );
         }
 
-        return $definitions;
+        return false;
     }
 
     /**
@@ -141,17 +141,12 @@ class TransactionalMatcher
 
     private function storeMatch($subject, $pattern)
     {
-        $conn = $pattern['conn'];
-        if (isset($this->cache[$subject][$conn])) {
-            throw TransactionException::duplicateConnectionMatch($conn, $pattern);
-        }
-
-        $this->cache[$subject][$conn] = array(
-                'conn' => $conn,
-                'isolation' => $pattern['isolation'],
-                'propagation' => $pattern['propagation'],
-                'noRollbackFor' => $pattern['noRollbackFor'],
-                'methods' => $pattern['methods'],
-                );
+        $this->cache[$subject] = array(
+            'conn' => $pattern['conn'],
+            'isolation' => $pattern['isolation'],
+            'propagation' => $pattern['propagation'],
+            'noRollbackFor' => $pattern['noRollbackFor'],
+            'methods' => $pattern['methods'],
+        );
     }
 }

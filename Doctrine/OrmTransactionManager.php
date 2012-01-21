@@ -13,35 +13,30 @@
 
 namespace SimpleThings\TransactionalBundle\Doctrine;
 
-class OrmTransactionManager extends AbstractTransactionManager
+class OrmTransactionManager extends ObjectTransactionManager
 {
-    private $container;
-
-    public function __construct($container)
-    {
-        $this->container = $container;
-    }
-
     protected function doBeginTransaction(TransactionDefinition $def)
     {
-        $manager = $container->get('simple_things_transactional.connections.' . $def->getManagerName());
+        $manager = $this->container->get('simple_things_transactional.connections.' . $def->getManagerName());
         $manager->beginTransaction();
         return $this->createTxStatus($manager, $def);
     }
 
-    protected function doCommit(TransactionStatus $def)
+    protected function doCommit(TransactionStatus $status)
     {
-        $def->commit();
+        $manager = $status->getWrappedConnection();
+        $manager->flush();
+        $manager->commit();
+
+        $status->markCompleted();
     }
 
-    protected function doRollBack(TransactionStatus $def)
+    protected function doRollBack(TransactionStatus $status)
     {
-        $def->rollBack();
-    }
+        $manager = $status->getWrappedConnection();
+        $manager->rollBack();
 
-    protected function createTxStatus($manager, $def)
-    {
-        return new OrmTransactionStatus($manager, $def);
+        $status->markCompleted();
     }
 }
 

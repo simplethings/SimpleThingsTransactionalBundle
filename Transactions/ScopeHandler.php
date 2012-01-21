@@ -29,9 +29,11 @@ class ScopeHandler
 
     public function enterScope()
     {
+        if ($this->levels) {
+            $this->container->enterScope('transactional');
+        }
         $this->levels[] = $this->currentLevel;
         $this->currentLevel = 0;
-        $this->container->enterScope('transactional');
     }
 
     public function leaveScope()
@@ -40,7 +42,9 @@ class ScopeHandler
             throw new TransactionException("Cannot leave transaction scope that still has levels.");
         }
         $this->currentLevel = array_pop($this->levels);
-        $this->container->leaveScope('transactional');
+        if ($this->levels) {
+            $this->container->leaveScope('transactional');
+        }
     }
 
     public function increaseNestingLevel()

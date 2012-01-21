@@ -46,7 +46,7 @@ class SimpleThingsTransactionalExtension extends Extension
         $config['defaults'] = array_merge(array(
                 'conn' => array(),
                 'pattern' => '.*',
-                'propagation' => TransactionDefinition::PROPAGATION_REQUIRED,
+                'propagation' => TransactionDefinition::PROPAGATION_JOINED,
                 'isolation' => TransactionDefinition::ISOLATION_DEFAULT,
                 'noRollbackFor' => array(),
                 'methods' => array('POST', 'PUT', 'DELETE', 'PATCH'),

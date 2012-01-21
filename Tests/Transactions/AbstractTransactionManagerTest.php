@@ -37,7 +37,7 @@ class AbstractTransactionManagerTest extends \PHPUnit_Framework_TestCase
     {
         $txStatus = $this->getTxStatusMock();
         $this->manager->expects($this->once())->method('doBeginTransaction')->will($this->returnValue($txStatus));
-        $def = $this->createDefinition(TransactionDefinition::PROPAGATION_REQUIRED, TransactionDefinition::ISOLATION_DEFAULT);
+        $def = $this->createDefinition(TransactionDefinition::PROPAGATION_JOINED, TransactionDefinition::ISOLATION_DEFAULT);
         $actualStatus = $this->manager->getTransaction($def);
 
         $this->assertSame($txStatus, $actualStatus);
@@ -45,7 +45,7 @@ class AbstractTransactionManagerTest extends \PHPUnit_Framework_TestCase
 
     public function testGetNeverTransaction()
     {
-        $def = $this->createDefinition(TransactionDefinition::PROPAGATION_NEVER, TransactionDefinition::ISOLATION_DEFAULT);
+        $def = $this->createDefinition(TransactionDefinition::PROPAGATION_MANUAL, TransactionDefinition::ISOLATION_DEFAULT);
         $actualStatus = $this->manager->getTransaction($def);
 
         $this->assertNull($actualStatus);
@@ -56,8 +56,8 @@ class AbstractTransactionManagerTest extends \PHPUnit_Framework_TestCase
         $txStatus = $this->getTxStatusMock();
         $this->manager->expects($this->once())->method('doBeginTransaction')->will($this->returnValue($txStatus));
 
-        $def1 = $this->createDefinition(TransactionDefinition::PROPAGATION_REQUIRED, TransactionDefinition::ISOLATION_DEFAULT);
-        $def2 = $this->createDefinition(TransactionDefinition::PROPAGATION_NEVER, TransactionDefinition::ISOLATION_DEFAULT);
+        $def1 = $this->createDefinition(TransactionDefinition::PROPAGATION_JOINED, TransactionDefinition::ISOLATION_DEFAULT);
+        $def2 = $this->createDefinition(TransactionDefinition::PROPAGATION_MANUAL, TransactionDefinition::ISOLATION_DEFAULT);
 
         $actualStatus1 = $this->manager->getTransaction($def1);
         $this->setExpectedException("SimpleThings\TransactionalBundle\TransactionException");
@@ -69,7 +69,7 @@ class AbstractTransactionManagerTest extends \PHPUnit_Framework_TestCase
         $txStatus = $this->getTxStatusMock();
         $this->manager->expects($this->once())->method('doBeginTransaction')->will($this->returnValue($txStatus));
 
-        $def = $this->createDefinition(TransactionDefinition::PROPAGATION_REQUIRED, TransactionDefinition::ISOLATION_DEFAULT);
+        $def = $this->createDefinition(TransactionDefinition::PROPAGATION_JOINED, TransactionDefinition::ISOLATION_DEFAULT);
         $actualStatus1 = $this->manager->getTransaction($def);
         $actualStatus2 = $this->manager->getTransaction($def);
 
@@ -81,8 +81,8 @@ class AbstractTransactionManagerTest extends \PHPUnit_Framework_TestCase
         $txStatus = $this->getTxStatusMock();
         $this->manager->expects($this->once())->method('doBeginTransaction')->will($this->returnValue($txStatus));
 
-        $def1 = $this->createDefinition(TransactionDefinition::PROPAGATION_REQUIRED, TransactionDefinition::ISOLATION_DEFAULT);
-        $def2 = $this->createDefinition(TransactionDefinition::PROPAGATION_REQUIRED, TransactionDefinition::ISOLATION_REPEATABLE_READ);
+        $def1 = $this->createDefinition(TransactionDefinition::PROPAGATION_JOINED, TransactionDefinition::ISOLATION_DEFAULT);
+        $def2 = $this->createDefinition(TransactionDefinition::PROPAGATION_JOINED, TransactionDefinition::ISOLATION_REPEATABLE_READ);
 
         $actualStatus1 = $this->manager->getTransaction($def1);
 
@@ -96,8 +96,8 @@ class AbstractTransactionManagerTest extends \PHPUnit_Framework_TestCase
         $txStatus->expects($this->once())->method('isReadOnly')->will($this->returnValue(true));
         $this->manager->expects($this->once())->method('doBeginTransaction')->will($this->returnValue($txStatus));
 
-        $def1 = $this->createDefinition(TransactionDefinition::PROPAGATION_REQUIRED, TransactionDefinition::ISOLATION_DEFAULT);
-        $def2 = $this->createDefinition(TransactionDefinition::PROPAGATION_REQUIRED, TransactionDefinition::ISOLATION_DEFAULT);
+        $def1 = $this->createDefinition(TransactionDefinition::PROPAGATION_JOINED, TransactionDefinition::ISOLATION_DEFAULT);
+        $def2 = $this->createDefinition(TransactionDefinition::PROPAGATION_JOINED, TransactionDefinition::ISOLATION_DEFAULT);
 
         $actualStatus1 = $this->manager->getTransaction($def1);
 
@@ -120,7 +120,7 @@ class AbstractTransactionManagerTest extends \PHPUnit_Framework_TestCase
         $txStatus = $this->getTxStatusMock();
         $this->manager->expects($this->once())->method('doBeginTransaction')->will($this->returnValue($txStatus));
 
-        $def1 = $this->createDefinition(TransactionDefinition::PROPAGATION_REQUIRED, TransactionDefinition::ISOLATION_DEFAULT);
+        $def1 = $this->createDefinition(TransactionDefinition::PROPAGATION_JOINED, TransactionDefinition::ISOLATION_DEFAULT);
         $def2 = $this->createDefinition(TransactionDefinition::PROPAGATION_SUPPORTS, TransactionDefinition::ISOLATION_DEFAULT);
 
         $actualStatus1 = $this->manager->getTransaction($def1);
@@ -136,8 +136,8 @@ class AbstractTransactionManagerTest extends \PHPUnit_Framework_TestCase
         $this->manager->expects($this->at(0))->method('doBeginTransaction')->will($this->returnValue($txStatus1));
         $this->manager->expects($this->at(1))->method('doBeginTransaction')->will($this->returnValue($txStatus2));
 
-        $def1 = $this->createDefinition(TransactionDefinition::PROPAGATION_REQUIRED, TransactionDefinition::ISOLATION_DEFAULT);
-        $def2 = $this->createDefinition(TransactionDefinition::PROPAGATION_REQUIRES_NEW, TransactionDefinition::ISOLATION_DEFAULT);
+        $def1 = $this->createDefinition(TransactionDefinition::PROPAGATION_JOINED, TransactionDefinition::ISOLATION_DEFAULT);
+        $def2 = $this->createDefinition(TransactionDefinition::PROPAGATION_ISOLATED, TransactionDefinition::ISOLATION_DEFAULT);
 
         $actualStatus1 = $this->manager->getTransaction($def1);
         $actualStatus2 = $this->manager->getTransaction($def2);
@@ -150,7 +150,7 @@ class AbstractTransactionManagerTest extends \PHPUnit_Framework_TestCase
         $txStatus1 = $this->getTxStatusMock();
         $this->manager->expects($this->at(0))->method('doBeginTransaction')->will($this->returnValue($txStatus1));
         $this->manager->expects($this->at(1))->method('doCommit');
-        $def1 = $this->createDefinition(TransactionDefinition::PROPAGATION_REQUIRED, TransactionDefinition::ISOLATION_DEFAULT);
+        $def1 = $this->createDefinition(TransactionDefinition::PROPAGATION_JOINED, TransactionDefinition::ISOLATION_DEFAULT);
 
         $actualStatus1 = $this->manager->getTransaction($def1);
 
@@ -162,7 +162,7 @@ class AbstractTransactionManagerTest extends \PHPUnit_Framework_TestCase
         $txStatus1 = $this->getTxStatusMock();
         $this->manager->expects($this->at(0))->method('doBeginTransaction')->will($this->returnValue($txStatus1));
         $this->manager->expects($this->at(1))->method('doCommit');
-        $def1 = $this->createDefinition(TransactionDefinition::PROPAGATION_REQUIRED, TransactionDefinition::ISOLATION_DEFAULT);
+        $def1 = $this->createDefinition(TransactionDefinition::PROPAGATION_JOINED, TransactionDefinition::ISOLATION_DEFAULT);
 
         $actualStatus1 = $this->manager->getTransaction($def1);
 
@@ -179,7 +179,7 @@ class AbstractTransactionManagerTest extends \PHPUnit_Framework_TestCase
 
         $this->manager->expects($this->at(0))->method('doBeginTransaction')->will($this->returnValue($txStatus1));
         $this->manager->expects($this->at(1))->method('doRollBack');
-        $def1 = $this->createDefinition(TransactionDefinition::PROPAGATION_REQUIRED, TransactionDefinition::ISOLATION_DEFAULT);
+        $def1 = $this->createDefinition(TransactionDefinition::PROPAGATION_JOINED, TransactionDefinition::ISOLATION_DEFAULT);
 
         $actualStatus1 = $this->manager->getTransaction($def1);
         $this->manager->commit($actualStatus1);
@@ -196,8 +196,8 @@ class AbstractTransactionManagerTest extends \PHPUnit_Framework_TestCase
         $this->manager->expects($this->at(2))->method('doCommit')->with($this->equalTo($txStatus2));
         $this->manager->expects($this->at(2))->method('doCommit')->with($this->equalTo($txStatus1));
 
-        $def1 = $this->createDefinition(TransactionDefinition::PROPAGATION_REQUIRED, TransactionDefinition::ISOLATION_DEFAULT);
-        $def2 = $this->createDefinition(TransactionDefinition::PROPAGATION_REQUIRES_NEW, TransactionDefinition::ISOLATION_DEFAULT);
+        $def1 = $this->createDefinition(TransactionDefinition::PROPAGATION_JOINED, TransactionDefinition::ISOLATION_DEFAULT);
+        $def2 = $this->createDefinition(TransactionDefinition::PROPAGATION_ISOLATED, TransactionDefinition::ISOLATION_DEFAULT);
 
         $actualStatus1 = $this->manager->getTransaction($def1);
 

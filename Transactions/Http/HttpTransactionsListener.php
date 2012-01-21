@@ -48,14 +48,18 @@ class HttpTransactionsListener
     public function onCoreController(FilterControllerEvent $event)
     {
         $request = $event->getRequest();
-        $definitions = $this->matcher->match($request->getMethod(), $event->getController());
-        $txManagers = $this->registry->getTransactions($definitions);
-
-        if ($txManagers && $this->logger) {
-            $this->logger->info("[TransactionBundle] Started transactions for " . implode(", ", array_keys($txManagers)));
+        $definition = $this->matcher->match($request->getMethod(), $event->getController());
+        if (!$definition) {
+            return;
         }
 
-        $request->attributes->set('_transactions', $txManagers);
+        $txManager = $this->registry->getTransaction($definition);
+        $request->attributes->set('_transaction', $txManager);
+        $request->attributes->set('_transaction_def', $definition);
+
+        if ($txManager && $this->logger) {
+            $this->logger->info("[TransactionBundle] Started transaction for " . $definition->getManagerName());
+        }
     }
 
     public function onKernelResponse(FilterResponseEvent $event)
@@ -63,15 +67,16 @@ class HttpTransactionsListener
         $request = $event->getRequest();
         $response = $event->getResponse();
 
-        if (!$request->attributes->has('_transactions')) {
+        $txStatus = $request->attributes->get('_transaction');
+        if ($txStatus === null) {
             return;
         }
+        $txDef = $request->attributes->get('_transaction_def');
 
-        $txManagers = $request->attributes->get('_transactions');
         if ($response->getStatusCode() >= 400 && $response->getStatusCode() != 404) {
-            $this->rollBack($txManagers);
+            $this->rollBack($txStatus, $txDef);
         } else {
-            $this->commit($txManagers);
+            $this->commit($txStatus, $txDef);
         }
     }
 
@@ -79,36 +84,35 @@ class HttpTransactionsListener
     {
         $request = $event->getRequest();
         $ex = $event->getException();
-        var_dump($ex->getMessage());
 
-        if (!$request->attributes->has('_transactions')) {
+        $txStatus = $request->attributes->get('_transaction');
+        if ($txStatus === null) {
             return;
         }
-
-        $txManagers = $request->attributes->get('_transactions');
+        $txDef = $request->attributes->get('_transaction_def');
 
         if ($ex instanceof NotFoundHttpException) {
-            $this->registry->commit($txManagers);
+            $this->registry->commit($txStatus);
         } else {
-            $this->registry->rollBack($txManagers);
+            $this->registry->rollBack($txStatus);
         }
     }
 
-    private function commit($txManagers)
+    private function commit($txStatus, $txDefinition)
     {
-        $this->registry->commit($txManagers);
+        $this->registry->commit($txStatus);
 
-        if ($txManagers && $this->logger) {
-            $this->logger->info("[TransactionBundle] Committed transactions for " . implode(", ", array_keys($txManagers)));
+        if ($this->logger) {
+            $this->logger->info("[TransactionBundle] Committed transaction for " . $txDefinition->getManagerName());
         }
     }
 
-    private function rollBack($txManagers)
+    private function rollBack($txStatus, $txDefinition)
     {
-        $this->registry->rollBack($txManagers);
+        $this->registry->rollBack($txStatus);
 
-        if ($txManagers && $this->logger) {
-            $this->logger->info("[TransactionBundle] Aborted transactions for " . implode(", ", array_keys($txManagers)));
+        if ($this->logger) {
+            $this->logger->info("[TransactionBundle] Aborted transaction for " . $txDefinition->getManagerName());
         }
     }
 }

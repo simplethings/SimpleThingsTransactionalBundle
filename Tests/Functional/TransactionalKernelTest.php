@@ -52,7 +52,7 @@ class TransactionalKernelTest extends \PHPUnit_Framework_TestCase
         $matcher = new TransactionalMatcher(array(), array(
             'conn' => 'dbal.default',
             'methods' => array('POST'),
-            'propagation' => TransactionDefinition::PROPAGATION_REQUIRED,
+            'propagation' => TransactionDefinition::PROPAGATION_JOINED,
             'isolation' => TransactionDefinition::ISOLATION_DEFAULT,
         ));
         $txListener = new HttpTransactionsListener($registry, $matcher, $this->logger);
@@ -69,8 +69,8 @@ class TransactionalKernelTest extends \PHPUnit_Framework_TestCase
         $this->kernel->handle($request);
 
         $this->assertEquals(array(
-            "[TransactionBundle] Started transactions for dbal.default",
-            "[TransactionBundle] Committed transactions for dbal.default"
+            "[TransactionBundle] Started transaction for dbal.default",
+            "[TransactionBundle] Committed transaction for dbal.default"
         ), $this->logger->logs);
     }
 
@@ -80,8 +80,8 @@ class TransactionalKernelTest extends \PHPUnit_Framework_TestCase
         $this->kernel->handle($request);
 
         $this->assertEquals(array(
-            "[TransactionBundle] Started transactions for dbal.default",
-            "[TransactionBundle] Committed transactions for dbal.default"
+            "[TransactionBundle] Started transaction for dbal.default",
+            "[TransactionBundle] Committed transaction for dbal.default"
         ), $this->logger->logs);
     }
 }

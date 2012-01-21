@@ -30,6 +30,11 @@ class ObjectTransactionStatus implements TransactionStatus
         $this->def = $def;
     }
 
+    public function getIsolationLevel()
+    {
+        return $this->def->getIsolationLevel();
+    }
+
     /**
      * Checks if the transaction is read-only.
      *
@@ -84,26 +89,14 @@ class ObjectTransactionStatus implements TransactionStatus
         return false;
     }
 
-    /**
-     * Commit the transaction at this point.
-     *
-     * @return void
-     */
-    public function commit()
+    public function getWrappedConnection()
     {
-        $this>completed = true;
-        $this->manager->flush();
+        return $this->manager;
     }
 
-    /**
-     * Rollback the transaction at this point marking it as complete.
-     *
-     * @return void
-     */
-    public function rollBack()
+    public function markCompleted()
     {
         $this->completed = true;
-        $this->manager->clear();
     }
 }
 

@@ -19,6 +19,13 @@ namespace SimpleThings\TransactionalBundle\Transactions;
 interface TransactionStatus
 {
     /**
+     * Get the Isolation level of this transaction
+     *
+     * @return int
+     */
+    function getIsolationLevel();
+
+    /**
      * Checks if the transaction is read-only.
      *
      * A read-only transaction does not commit changes to the database when
@@ -58,10 +65,10 @@ interface TransactionStatus
     function hasSavepoint();
 
     /**
-     * Commit the transaction at this point.
+     * Return the connection object that is wrapped in this status.
      *
-     * @return void
+     * @return object
      */
-    function commit();
+    function getWrappedConnection();
 }
 
