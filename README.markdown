@@ -1,27 +1,22 @@
 # SimpleThings TransactionalBundle
 
-Wraps calls to controllers into a transaction, be it Doctrine DBAL or Persistence Managers (ORM, MongoDB, CouchDB).
-Configuration is done via routing parameters or through a list of controllers/actions configured in the
-extension config.
+Provides the missing transactions support for Symfony2 on the framework level. The bundle wraps calls to controllers into transactions for either database connections or object managers. The bundle is stricly meant to be run in an HTTP context, using the HTTP verbs for differentating between read/write and read-only transactions.
 
 ## Installation
 
 See at the end of this document.
 
-## Problem
+## Problems to solve
 
-Symfony2 allows to nest controllers into each other in unlimited amounts. These controllers can all modify and save
-data. The Doctrine persistence solutions (ORM, MongoDB, CouchDB) use a transactional write-behind
-mechanism to flush changes in batches, best executed at the end of the master request. If each controller
-or model service handles transactions themselves then you probably overuse the flush operation, which
-can lead to inconsistencies and performance penalities.
+Symfony2 allows to nest controllers into each other in unlimited amounts. These controllers can all modify and save data. The Doctrine persistence solutions (ORM, MongoDB, CouchDB) use a transactional write-behind mechanism to flush changes in batches, best executed at the end of the master request. If each controller or model service handles transactions themselves then you probably overuse the flush operation, which can lead to inconsistencies and performance penalities.
 
-Transaction management should by seperated from your domain model, handled by the framework in a HTTP context.
+Additionally your domain code should not be cluttered with transactional code when its not stricly needed.
+
+Therefore transaction management should by seperated from your domain model, handled by the framework in a HTTP context.
 
 ## How it works
 
-For every Doctrine DBAL connection, every EntityManager and every DocumentManager the Transactional Bundle
-creates a service that implements a transactions provider interface:
+For every Doctrine DBAL connection, every EntityManager and every DocumentManager the Transactional Bundle creates a service that implements a transactions provider interface:
 
     interface TransactionProviderInterface
     {
@@ -31,8 +26,7 @@ creates a service that implements a transactions provider interface:
         function createTransaction(TransactionDefinition $def);
     }
 
-With the transactional bundle the following workflow is applied to an action that is marked
-as transactional (by default always if POST, PUT, DELETE, PATCH request is found).
+With the transactional bundle the following workflow is applied to an action that is marked as transactional
 
 1. Detect which Connection should wrap the to-be-excecuted action and if its read/write or read-only.
 2. A transaction is started before the controller is called.
@@ -50,6 +44,8 @@ You can mark actions as transactional by means of configuration. There are three
 3. Transactions are either read/write or read-only. A read-only transaction is rolled back at the end of the request no matter what. In the context of ObjectMAnagers this means the flush operation is NOT called. The read/write or read-only status is detected by matching against the HTTP Verbs. By default GET requests are read-only and PUT, POST, DELETE and PATCH are read/write transactions.
 4. If the read-only/read-write status switches during a sub-request an exception is thrown. Modes cannot be mixed.
 
+## Configuration
+
 ### Auto-Transactional Mode
 
 If you have a RESTful application and you only use one transactional manager, for example the Doctrine ORM then your configuration
@@ -64,7 +60,7 @@ With this configuration every POST, PUT, DELETE and PATCH request is wrapped ins
 There is no way to disable this behavior except by throwing an exception. GET requests that need to write a transaction
 have to do this explicitly.
 
-### Working with explicit configuration
+### Controller Pattern Matching
 
 If you have an application that is either not RESTful, uses multiple transactional managers or has advanced
 requirements with regard to transactions then you should configure the transactional behavior explicitly.
@@ -161,6 +157,10 @@ Here is the code:
 
 ## Installation
 
+On Composer as 'simplethings/transactional-bundle' package.
+
+Or oldschool:
+
 1. Add TransactionalBundle to deps:
 
         [SimpleThingsTransactionalBundle]
@@ -187,4 +187,9 @@ Here is the code:
 6. Configure extension:
 
         simple_things_transactional: ~
+
+# Todos
+
+* Move configuration to Symfony\Component\Config
+* Add modes 'autocommit', 'commit_on_success' (default) and 'manual' that determine how an action should be handled transactionally.
 
