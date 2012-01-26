@@ -26,14 +26,6 @@ class Transactional extends Annotation
      */
     public $conn = null;
     /**
-     * @var int
-     */
-    public $propagation = null;
-    /**
-     * @var int
-     */
-    public $isolation = null;
-    /**
      * @var array
      */
     public $noRollbackFor = null;

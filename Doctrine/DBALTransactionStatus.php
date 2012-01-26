@@ -40,7 +40,7 @@ class DBALTransactionStatus implements TransactionStatus
      */
     public function isReadOnly()
     {
-        return $this->def->getReadOnly();
+        return $this->def->isReadOnly();
     }
 
     /**
@@ -78,9 +78,48 @@ class DBALTransactionStatus implements TransactionStatus
         return $this->conn;
     }
 
-    public function markCompleted()
+    /**
+     * Begin the transaction
+     */
+    public function beginTransaction()
     {
-        $this->completed = true;
+        $this->conn->beginTransaction();
+    }
+
+    /**
+     * Commit the transaction
+     *
+     * Depending on the Transaction#isRollBackOnly status this method commits
+     * or rollbacks the transaction wrapped inside the status. If an error
+     * happens during commit the original exception of the underlying
+     * connection is thrown from this method.
+     *
+     * @throws Exception
+     * @return void
+     */
+    public function commit()
+    {
+        if ($this->isReadOnly()) {
+            return $this->rollBack();
+        }
+
+        $this->conn->commit();
+        if (0 === $this->conn->getTransactionNestingLevel()) {
+            $this->completed = true;
+        }
+    }
+
+    /**
+     * Rollback the transaction inside the status object.
+     *
+     * @return void
+     */
+    public function rollBack()
+    {
+        $this->conn->rollBack();
+        if (0 === $this->conn->getTransactionNestingLevel()) {
+            $this->completed = true;
+        }
     }
 }
 

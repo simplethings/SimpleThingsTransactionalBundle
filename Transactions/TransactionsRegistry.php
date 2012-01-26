@@ -23,44 +23,48 @@ use SimpleThings\TransactionalBundle\TransactionException;
  * request, however many are supported by this facade. The Transactions passed
  * here should always be in the same request, not from different requests.
  */
-class TransactionsRegistry implements TransactionManagerInterface
+class TransactionsRegistry
 {
     private $container;
-    private $connectionServices;
     private $transactions;
 
-    public function __construct(ContainerInterface $container, $connectionServices = array())
+    public function __construct(ContainerInterface $container)
     {
         $this->container = $container;
-        $this->connectionServices = $connectionServices;
     }
 
     public function getTransaction(TransactionDefinition $definition)
     {
         $connectionName = $definition->getConnectionName();
-        $status = $this->getTransactionManager($connectionName)->getTransaction($definition);
-        $this->transactions[spl_object_hash($status)] = $connectionName;
-        return $status;
+        if ( ! isset($this->transactions[$connectionName] )) {
+            $status = $this->getTransactionProvider($connectionName)->createTransaction($definition);
+            $this->transactions[$connectionName] = $status;
+        }
+
+        if ($definition->isReadOnly() !== $this->transactions[$connectionName]->isReadOnly()) {
+            throw new \RuntimeException("Cannot switch from read-only to write/read-transaction or vice-versa.");
+        }
+
+        $this->transactions[$connectionName]->beginTransaction();
+        return $this->transactions[$connectionName];
     }
 
     public function commit(TransactionStatus $status)
     {
-        $connectionName = $this->transactions[spl_object_hash($status)];
-        $this->getTransactionManager($connectionName)->commit($status);
+        $status->commit();
     }
 
     public function rollBack(TransactionStatus $status)
     {
-        $connectionName = $this->transactions[spl_object_hash($status)];
-        $this->getTransactionManager($connectionName)->rollBack($status);
+        $status->rollBack();
     }
 
-    private function getTransactionManager($name)
+    private function getTransactionProvider($name)
     {
         $id = "simple_things_transactional.tx.".$name;
         if (!$this->container->has($id)) {
             throw new \InvalidArgumentException(
-                "A transactional manager by name of '".$name."' was requested, but does not exist."
+                "A transactional connection by name of '".$name."' was requested, but does not exist."
             );
         }
         return $this->container->get($id);

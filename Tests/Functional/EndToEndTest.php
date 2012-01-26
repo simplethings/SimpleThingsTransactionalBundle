@@ -25,8 +25,7 @@ use SimpleThings\TransactionalBundle\Transactions\Http\HttpTransactionsListener;
 use SimpleThings\TransactionalBundle\Transactions\TransactionsRegistry;
 use SimpleThings\TransactionalBundle\Transactions\TransactionDefinition;
 use SimpleThings\TransactionalBundle\Transactions\Http\TransactionalMatcher;
-use SimpleThings\TransactionalBundle\Transactions\ScopeHandler;
-use SimpleThings\TransactionalBundle\Doctrine\DBALTransactionManager;
+use SimpleThings\TransactionalBundle\Doctrine\DBALTransactionProvider;
 use Doctrine\DBAL\DriverManager;
 
 class EndToEndTest extends \PHPUnit_Framework_TestCase
@@ -61,9 +60,8 @@ class EndToEndTest extends \PHPUnit_Framework_TestCase
         // set does not work here, get has to work!
         $container->set('doctrine.dbal.default_connection', $conn);
         $container->set('simple_things_transactional.connections.dbal.default', $conn);
-        $scope = new ScopeHandler($container);
 
-        $txManager = new DBALTransactionManager($container, $scope);
+        $txManager = new DBALTransactionProvider($container);
         $container->set('simple_things_transactional.tx.dbal.default', $txManager);
 
         $resolver = $this->getMock('Symfony\Component\HttpKernel\Controller\ControllerResolverInterface');

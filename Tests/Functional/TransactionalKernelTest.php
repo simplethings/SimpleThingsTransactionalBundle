@@ -35,19 +35,19 @@ class TransactionalKernelTest extends \PHPUnit_Framework_TestCase
         $resolver->expects($this->once())->method('getArguments')->will($this->returnValue(array()));
 
         $txStatus1 =  $this->getMock('SimpleThings\TransactionalBundle\Transactions\TransactionStatus');
-        $manager = $this->getMock('SimpleThings\TransactionalBundle\Transactions\TransactionManagerInterface', array(), array(), '', false);
-        $manager->expects($this->at(0))->method('getTransaction')->will($this->returnValue($txStatus1));
-        $manager->expects($this->at(1))->method('commit');
+        $txStatus1->expects($this->any())->method('isReadOnly')->will($this->returnValue(false));
+        $provider = $this->getMock('SimpleThings\TransactionalBundle\Transactions\TransactionProviderInterface', array(), array(), '', false);
+        $provider->expects($this->at(0))->method('createTransaction')->will($this->returnValue($txStatus1));
 
         $this->logger = new StackLogger;
         $container = $this->getMock('Symfony\Component\DependencyInjection\ContainerInterface');
         $container->expects($this->any())->method('has')->with($this->equalTo('simple_things_transactional.tx.dbal.default'))->will($this->returnValue(true));
-        $container->expects($this->any())->method('get')->with($this->equalTo('simple_things_transactional.tx.dbal.default'))->will($this->returnValue($manager));
+        $container->expects($this->any())->method('get')->with($this->equalTo('simple_things_transactional.tx.dbal.default'))->will($this->returnValue($provider));
 
         $registry = new TransactionsRegistry($container);
         $matcher = new TransactionalMatcher(array(), array(
             'conn' => 'dbal.default',
-            'methods' => array('POST'),
+            'methods' => array('POST', 'GET'),
         ));
         $txListener = new HttpTransactionsListener($registry, $matcher, $this->logger);
         $dispatcher = new EventDispatcher();

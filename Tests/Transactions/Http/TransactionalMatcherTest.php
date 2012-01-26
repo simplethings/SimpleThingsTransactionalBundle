@@ -31,7 +31,7 @@ class TransactionalMatcherTest extends \PHPUnit_Framework_TestCase
         if ($matched) {
             $this->assertInstanceOf('SimpleThings\TransactionalBundle\Transactions\TransactionDefinition', $definition);
             $this->assertEquals('orm.default', $definition->getConnectionName());
-            $this->assertEquals($readOnly, $definition->getReadOnly());
+            $this->assertEquals($readOnly, $definition->isReadOnly());
         } else {
             $this->assertFalse($definition);
         }

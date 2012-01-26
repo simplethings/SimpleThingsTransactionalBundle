@@ -56,5 +56,30 @@ interface TransactionStatus
      * @return object
      */
     function getWrappedConnection();
+
+    /**
+     * Begin the transaction
+     */
+    function beginTransaction();
+
+    /**
+     * Commit the transaction
+     *
+     * Depending on the Transaction#isRollBackOnly status this method commits
+     * or rollbacks the transaction wrapped inside the status. If an error
+     * happens during commit the original exception of the underlying
+     * connection is thrown from this method.
+     *
+     * @throws Exception
+     * @return void
+     */
+    function commit();
+
+    /**
+     * Rollback the transaction inside the status object.
+     *
+     * @return void
+     */
+    function rollBack();
 }
 

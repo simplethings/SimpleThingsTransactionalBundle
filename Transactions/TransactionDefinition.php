@@ -39,7 +39,7 @@ class TransactionDefinition
     public function __construct($connectionName, $readOnly = false, $noRollbackFor = array())
     {
         $this->connectionName = $connectionName;
-        $this->readOnly = $readOnly;
+        $this->readOnly = (bool)$readOnly;
         $this->noRollbackFor = $noRollbackFor;
     }
 
@@ -48,7 +48,7 @@ class TransactionDefinition
      *
      * @return readOnly.
      */
-    public function getReadOnly()
+    public function isReadOnly()
     {
         return $this->readOnly;
     }
