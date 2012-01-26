@@ -53,12 +53,12 @@ class HttpTransactionsListener
             return;
         }
 
-        $txManager = $this->registry->getTransaction($definition);
-        $request->attributes->set('_transaction', $txManager);
+        $status = $this->registry->getTransaction($definition);
+        $request->attributes->set('_transaction', $status);
         $request->attributes->set('_transaction_def', $definition);
 
-        if ($txManager && $this->logger) {
-            $this->logger->info("[TransactionBundle] Started transaction for " . $definition->getManagerName());
+        if ($status && $this->logger) {
+            $this->logger->info("[TransactionBundle] Started transaction for " . $definition->getConnectionName());
         }
     }
 
@@ -103,7 +103,7 @@ class HttpTransactionsListener
         $this->registry->commit($txStatus);
 
         if ($this->logger) {
-            $this->logger->info("[TransactionBundle] Committed transaction for " . $txDefinition->getManagerName());
+            $this->logger->info("[TransactionBundle] Committed transaction for " . $txDefinition->getConnectionName());
         }
     }
 
@@ -112,7 +112,7 @@ class HttpTransactionsListener
         $this->registry->rollBack($txStatus);
 
         if ($this->logger) {
-            $this->logger->info("[TransactionBundle] Aborted transaction for " . $txDefinition->getManagerName());
+            $this->logger->info("[TransactionBundle] Aborted transaction for " . $txDefinition->getConnectionName());
         }
     }
 }

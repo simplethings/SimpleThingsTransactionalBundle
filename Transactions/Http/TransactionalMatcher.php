@@ -90,8 +90,6 @@ class TransactionalMatcher
 
             return new TransactionDefinition(
                 $definition['conn'],
-                $definition['propagation'],
-                $definition['isolation'],
                 ! in_array($method, (array)$definition['methods'])
             );
         }
@@ -143,8 +141,6 @@ class TransactionalMatcher
     {
         $this->cache[$subject] = array(
             'conn' => $pattern['conn'],
-            'isolation' => $pattern['isolation'],
-            'propagation' => $pattern['propagation'],
             'noRollbackFor' => $pattern['noRollbackFor'],
             'methods' => $pattern['methods'],
         );

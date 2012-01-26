@@ -15,7 +15,7 @@ namespace SimpleThings\TransactionalBundle\Doctrine;
 
 use SimpleThings\TransactionalBundle\Transactions\TransactionStatus;
 use SimpleThings\TransactionalBundle\Transactions\TransactionDefinition;
-use SimpleThings\TransactionalBundle\Transactions\AbstractTransactionManager;
+use SimpleThings\TransactionalBundle\Transactions\TransactionManagerInterface;
 
 /**
  * Doctrine Object TransactionManager for any Doctrine ObjectManager.
@@ -26,40 +26,64 @@ use SimpleThings\TransactionalBundle\Transactions\AbstractTransactionManager;
  * resetting the service and reconstituting the "previous" manager when the
  * transaction is committed or rolled back.
  */
-class DBALTransactionManager extends AbstractTransactionManager
+class DBALTransactionManager implements TransactionManagerInterface
 {
+    /**
+     * @var ContainerInterface
+     */
     protected $container;
 
-    public function __construct($container, $scopeHandler)
+    public function __construct($container)
     {
         $this->container = $container;
-        parent::__construct($scopeHandler);
     }
 
-    protected function createTxStatus($conn, $def)
+    /**
+     * Get a transaction status object.
+     *
+     * @return TransactionDefinition
+     */
+    public function getTransaction(TransactionDefinition $def)
     {
+        $conn = $this->container->get('simple_things_transactional.connections.' . $def->getConnectionName());
+        $conn->beginTransaction();
         return new DBALTransactionStatus($conn, $def);
     }
 
-    protected function doBeginTransaction(TransactionDefinition $def)
-    {
-        $conn = $this->container->get('simple_things_transactional.connections.' . $def->getManagerName());
-        $conn->beginTransaction();
-        return $this->createTxStatus($conn, $def);
-    }
-
-    protected function doCommit(TransactionStatus $status)
+    /**
+     * Commit the transaction inside the status object.
+     *
+     * Depending on the Transaction#isRollBackOnly status this method commits
+     * or rollbacks the transaction wrapped inside the status. If an error
+     * happens during commit the original exception of the underlying
+     * connection is thrown from this method.
+     *
+     * @throws Exception
+     * @param TransactionStatus $status
+     * @return void
+     */
+    public function commit(TransactionStatus $status)
     {
         $conn = $status->getWrappedConnection();
         $conn->commit();
-        $status->markCompleted();
+        if ($conn->getTransactionNestingLevel() == 0) {
+            $status->markCompleted();
+        }
     }
 
-    protected function doRollBack(TransactionStatus $status)
+    /**
+     * Rollback the transaction inside the status object.
+     *
+     * @param TransactionStatus $status
+     * @return void
+     */
+    public function rollBack(TransactionStatus $status)
     {
         $conn = $status->getWrappedConnection();
         $conn->rollback();
-        $status->markCompleted();
+        if ($conn->getTransactionNestingLevel() == 0) {
+            $status->markCompleted();
+        }
     }
 }
 

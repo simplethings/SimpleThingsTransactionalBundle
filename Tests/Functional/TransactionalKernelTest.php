@@ -35,13 +35,9 @@ class TransactionalKernelTest extends \PHPUnit_Framework_TestCase
         $resolver->expects($this->once())->method('getArguments')->will($this->returnValue(array()));
 
         $txStatus1 =  $this->getMock('SimpleThings\TransactionalBundle\Transactions\TransactionStatus');
-        $manager = $this->getMock(
-            'SimpleThings\TransactionalBundle\Transactions\AbstractTransactionManager',
-            array('doBeginTransaction', 'doCommit', 'doRollBack'),
-            array($this->getMock('SimpleThings\TransactionalBundle\Transactions\ScopeHandler', array(), array(), '', false))
-        );
-        $manager->expects($this->at(0))->method('doBeginTransaction')->will($this->returnValue($txStatus1));
-        $manager->expects($this->at(1))->method('doCommit');
+        $manager = $this->getMock('SimpleThings\TransactionalBundle\Transactions\TransactionManagerInterface', array(), array(), '', false);
+        $manager->expects($this->at(0))->method('getTransaction')->will($this->returnValue($txStatus1));
+        $manager->expects($this->at(1))->method('commit');
 
         $this->logger = new StackLogger;
         $container = $this->getMock('Symfony\Component\DependencyInjection\ContainerInterface');
@@ -52,8 +48,6 @@ class TransactionalKernelTest extends \PHPUnit_Framework_TestCase
         $matcher = new TransactionalMatcher(array(), array(
             'conn' => 'dbal.default',
             'methods' => array('POST'),
-            'propagation' => TransactionDefinition::PROPAGATION_JOINED,
-            'isolation' => TransactionDefinition::ISOLATION_DEFAULT,
         ));
         $txListener = new HttpTransactionsListener($registry, $matcher, $this->logger);
         $dispatcher = new EventDispatcher();

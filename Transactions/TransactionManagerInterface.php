@@ -23,10 +23,6 @@ interface TransactionManagerInterface
     /**
      * Get a transaction status object.
      *
-     * 1. Returns a new transaction if none was opened with this manager yet.
-     * 2. Returns a previous transaction if the propagation is REQUIRED.
-     * 3. Returns a new transaction if the propagation is REQUIRES_NEW.
-     *
      * @return TransactionDefinition
      */
     function getTransaction(TransactionDefinition $def);

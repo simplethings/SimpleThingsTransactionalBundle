@@ -18,6 +18,7 @@ use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\HttpKernel\Log\NullLogger;
 use Symfony\Component\DependencyInjection\ContainerBuilder;
+use Symfony\Component\DependencyInjection\Definition;
 use Symfony\Component\DependencyInjection\Scope;
 use Symfony\Bundle\FrameworkBundle\HttpKernel;
 use SimpleThings\TransactionalBundle\Transactions\Http\HttpTransactionsListener;
@@ -36,6 +37,12 @@ class EndToEndTest extends \PHPUnit_Framework_TestCase
 
     public function setUp()
     {
+        $definition = new Definition('Doctrine\DBAL\Connection');
+        $definition->setFactoryClass('Doctrine\DBAL\DriverManager');
+        $definition->setFactoryMethod('getConnection');
+        $definition->setArguments(array(array('driver' => 'pdo_sqlite', 'memory' => true)));
+        $definition->setScope('transactional');
+
         $conn = $this->conn = DriverManager::getConnection(array('driver' => 'pdo_sqlite', 'memory' => true));
         $table = new \Doctrine\DBAL\Schema\Table("testdata");
         $table->addColumn('id', 'integer', array('auto_increment' => true));
@@ -47,9 +54,11 @@ class EndToEndTest extends \PHPUnit_Framework_TestCase
         $this->logger = new FunctionalStackLogger;
 
         $container = new ContainerBuilder();
+        $container->setDefinition('simple_things_transactional.connections.dbal.default', $definition);
         $container->addScope(new Scope('transactional'));
         $container->addScope(new Scope('request'));
 
+        // set does not work here, get has to work!
         $container->set('doctrine.dbal.default_connection', $conn);
         $container->set('simple_things_transactional.connections.dbal.default', $conn);
         $scope = new ScopeHandler($container);
@@ -66,8 +75,6 @@ class EndToEndTest extends \PHPUnit_Framework_TestCase
         $matcher = new TransactionalMatcher(array(), array(
             'conn' => 'dbal.default',
             'methods' => array('POST'),
-            'propagation' => TransactionDefinition::PROPAGATION_ISOLATED,
-            'isolation' => TransactionDefinition::ISOLATION_DEFAULT,
         ));
 
         $txListener = new HttpTransactionsListener($registry, $matcher, $this->logger);
@@ -86,10 +93,12 @@ class EndToEndTest extends \PHPUnit_Framework_TestCase
 
         $this->assertEquals(array(
             "[TransactionBundle] Started transaction for dbal.default",
+            "[TransactionBundle] Started transaction for dbal.default",
+            "[TransactionBundle] Committed transaction for dbal.default",
             "[TransactionBundle] Committed transaction for dbal.default"
         ), $this->logger->logs);
 
-        var_dump($this->conn->fetchAll("SELECT * FROM testdata"));
+        $this->assertEquals(0, count($this->conn->fetchAll("SELECT * FROM testdata")));
     }
 
     public function testPostRequest()
@@ -99,9 +108,12 @@ class EndToEndTest extends \PHPUnit_Framework_TestCase
 
         $this->assertEquals(array(
             "[TransactionBundle] Started transaction for dbal.default",
+            "[TransactionBundle] Started transaction for dbal.default",
+            "[TransactionBundle] Committed transaction for dbal.default",
             "[TransactionBundle] Committed transaction for dbal.default"
         ), $this->logger->logs);
-        var_dump($this->conn->fetchAll("SELECT * FROM testdata"));
+
+        $this->assertEquals(2, count($this->conn->fetchAll("SELECT * FROM testdata")));
     }
 }
 
@@ -129,9 +141,7 @@ class DBALTestController
         $conn = $this->container->get('doctrine.dbal.default_connection');
         $conn->insert("testdata", array("val" => "foo"));
 
-        try {
-            $this->container->get('http_kernel')->forward('DBALTestController:secondAxtion');
-        } catch(\Exception $e) {}
+        $this->container->get('http_kernel')->forward('DBALTestController:secondAction');
 
         return new Response('data', 200);
     }
@@ -141,7 +151,8 @@ class DBALTestController
         $conn = $this->container->get('doctrine.dbal.default_connection');
         $conn->insert("testdata", array("val" => "foo"));
 
-        throw new \InvalidArgumentException("blablabla!");
+        return new Response('data', 200);
     }
 }
+
 

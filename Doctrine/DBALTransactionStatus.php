@@ -1,6 +1,6 @@
 <?php
 /**
- * SImpleThings TransactionalBundle
+ * SimpleThings TransactionalBundle
  *
  * LICENSE
  *
@@ -27,11 +27,6 @@ class DBALTransactionStatus implements TransactionStatus
     {
         $this->conn = $conn;
         $this->def = $def;
-    }
-
-    public function getIsolationLevel()
-    {
-        return $this->def->getIsolationLevel();
     }
 
     /**
@@ -76,16 +71,6 @@ class DBALTransactionStatus implements TransactionStatus
     public function isCompleted()
     {
         return $this->completed;
-    }
-
-    /**
-     * Check if this transaction has savepoints.
-     *
-     * @return bool
-     */
-    public function hasSavepoint()
-    {
-        return false;
     }
 
     public function getWrappedConnection()

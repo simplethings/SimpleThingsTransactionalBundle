@@ -37,22 +37,22 @@ class TransactionsRegistry implements TransactionManagerInterface
 
     public function getTransaction(TransactionDefinition $definition)
     {
-        $managerName = $definition->getManagerName();
-        $status = $this->getTransactionManager($managerName)->getTransaction($definition);
-        $this->transactions[spl_object_hash($status)] = $managerName;
+        $connectionName = $definition->getConnectionName();
+        $status = $this->getTransactionManager($connectionName)->getTransaction($definition);
+        $this->transactions[spl_object_hash($status)] = $connectionName;
         return $status;
     }
 
     public function commit(TransactionStatus $status)
     {
-        $managerName = $this->transactions[spl_object_hash($status)];
-        $this->getTransactionManager($managerName)->commit($status);
+        $connectionName = $this->transactions[spl_object_hash($status)];
+        $this->getTransactionManager($connectionName)->commit($status);
     }
 
     public function rollBack(TransactionStatus $status)
     {
-        $managerName = $this->transactions[spl_object_hash($status)];
-        $this->getTransactionManager($managerName)->rollBack($status);
+        $connectionName = $this->transactions[spl_object_hash($status)];
+        $this->getTransactionManager($connectionName)->rollBack($status);
     }
 
     private function getTransactionManager($name)

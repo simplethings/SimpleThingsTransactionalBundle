@@ -20,8 +20,6 @@ class TransactionalMatcherTest extends \PHPUnit_Framework_TestCase
             'pattern' => $pattern,
             'methods' => array('POST', 'PUT'),
             'conn' => 'orm.default',
-            'isolation' => TransactionDefinition::ISOLATION_DEFAULT,
-            'propagation' => TransactionDefinition::PROPAGATION_JOINED,
             'noRollbackFor' => array(),
         );
 
@@ -32,7 +30,7 @@ class TransactionalMatcherTest extends \PHPUnit_Framework_TestCase
 
         if ($matched) {
             $this->assertInstanceOf('SimpleThings\TransactionalBundle\Transactions\TransactionDefinition', $definition);
-            $this->assertEquals('orm.default', $definition->getManagerName());
+            $this->assertEquals('orm.default', $definition->getConnectionName());
             $this->assertEquals($readOnly, $definition->getReadOnly());
         } else {
             $this->assertFalse($definition);
@@ -42,8 +40,6 @@ class TransactionalMatcherTest extends \PHPUnit_Framework_TestCase
     public function testMatchClassAnnotation()
     {
         $defaults = array(
-            'isolation' => TransactionDefinition::ISOLATION_DEFAULT,
-            'propagation' => TransactionDefinition::PROPAGATION_JOINED,
             'noRollbackFor' => array(),
         );
 
@@ -63,8 +59,6 @@ class TransactionalMatcherTest extends \PHPUnit_Framework_TestCase
 
         $expectedDefinition = new TransactionDefinition(
             'orm.default',
-            TransactionDefinition::PROPAGATION_JOINED,
-            TransactionDefinition::ISOLATION_DEFAULT,
             false,
             array()
         );
@@ -74,8 +68,6 @@ class TransactionalMatcherTest extends \PHPUnit_Framework_TestCase
     public function testMatchMethodAnnotation()
     {
         $defaults = array(
-            'isolation' => TransactionDefinition::ISOLATION_DEFAULT,
-            'propagation' => TransactionDefinition::PROPAGATION_JOINED,
             'noRollbackFor' => array(),
         );
 
@@ -97,8 +89,6 @@ class TransactionalMatcherTest extends \PHPUnit_Framework_TestCase
 
         $expectedDefinition = new TransactionDefinition(
             'orm.default',
-            TransactionDefinition::PROPAGATION_JOINED,
-            TransactionDefinition::ISOLATION_DEFAULT,
             false,
             array()
         );

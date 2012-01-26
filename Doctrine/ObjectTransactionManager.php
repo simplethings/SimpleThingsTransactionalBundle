@@ -40,7 +40,7 @@ class ObjectTransactionManager extends AbstractTransactionManager
 
     protected function doBeginTransaction(TransactionDefinition $def)
     {
-        $manager = $this->container->get('simple_things_transactional.connections.' . $def->getManagerName());
+        $manager = $this->container->get('simple_things_transactional.connections.' . $def->getConnectionName());
         return $this->createTxStatus($manager, $def);
     }
 
