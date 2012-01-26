@@ -11,12 +11,13 @@
  * to kontakt@beberlei.de so I can send you a copy immediately.
  */
 
-namespace SimpleThingsTransactionalBundle\Transactions\Form;
+namespace SimpleThings\TransactionalBundle\Transactions\Form;
 
 use Symfony\Component\Form\AbstractTypeExtension;
 use Symfony\Component\Form\FormBuilder;
+use Symfony\Component\Form\AbstractExtension;
 
-class RollbackInvalidFormExtension extends FormExtension
+class RollbackInvalidFormExtension extends AbstractExtension
 {
     public function buildForm(FormBuilder $builder, array $options)
     {

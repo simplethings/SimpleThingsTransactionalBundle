@@ -30,6 +30,8 @@ class ContainerTest extends \PHPUnit_Framework_TestCase
         $this->assertInstanceOf('SimpleThings\TransactionalBundle\Transactions\TransactionsRegistry', $container->get('simple_things_transactional.registry'));
         $this->assertInstanceOf('SimpleThings\TransactionalBundle\Doctrine\DBALTransactionProvider', $container->get('simple_things_transactional.tx.dbal.default'));
         $this->assertInstanceOf('SimpleThings\TransactionalBundle\Doctrine\OrmTransactionProvider', $container->get('simple_things_transactional.tx.orm.default'));
+        $this->assertInstanceOf('SimpleThings\TransactionalBundle\Transactions\Form\RollbackInvalidFormExtension', $container->get('simple_things_transactional.form_extension'));
+        $this->assertInstanceOf('SimpleThings\TransactionalBundle\Transactions\Http\TransactionalMatcher', $container->get('simple_things_transactional.transactional_matcher'));
     }
 
     public function createTestContainer()

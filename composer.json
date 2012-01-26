@@ -3,7 +3,7 @@
     "description": "This bundles provides missing transactional support for Symfony2",
     "keywords": ["symfony2", "transactions", "persistence"],
     "type": "symfony-bundle",
-    "license": "MIT",
+    "license": "New BSD",
     "authors": [{
         "name" : "Benjamin Eberlei",
         "email" : "kontakt@beberlei.de"

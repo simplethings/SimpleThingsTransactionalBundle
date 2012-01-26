@@ -39,10 +39,8 @@ class RollbackInvalidFormValidator implements FormValidatorInterface
         }
 
         $request = $this->container->get('request');
-        if (!$form->isValid()) {
-            foreach ($request->attributes->get('_transactions') as $tx) {
-                $tx->setRollbackOnly();
-            }
+        if ( ! $form->isValid( && $request->attributes->has('_transaction') ) {
+            $request->attributes->get('_transaction')->setRollBackOnly(true);
         }
     }
 }
