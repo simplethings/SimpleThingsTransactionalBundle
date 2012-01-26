@@ -1,5 +1,4 @@
 <?php
-
 /**
  * SimpleThings TransactionalBundle
  *
@@ -12,21 +11,19 @@
  * to kontakt@beberlei.de so I can send you a copy immediately.
  */
 
-namespace SimpleThings\TransactionalBundle\Doctrine;
+namespace SimpleThingsTransactionalBundle\Doctrine;
 
-use SimpleThings\TransactionalBundle\Transactions\TransactionStatus;
-use SimpleThings\TransactionalBundle\Transactions\TransactionDefinition;
-use Doctrine\DBAL\Connection;
+use Doctrine\ORM\EntityManager;
 
-class DBALTransactionStatus implements TransactionStatus
+class OrmTransactionStatus implements TransactionStatus
 {
     private $def;
-    private $conn;
+    private $manager;
     private $completed = false;
 
-    public function __construct(Connection $conn, TransactionDefinition $def)
+    public function __construct(EntityManager $conn, TransactionDefinition $def)
     {
-        $this->conn = $conn;
+        $this->manager = $manager;
         $this->def = $def;
     }
 
@@ -51,7 +48,7 @@ class DBALTransactionStatus implements TransactionStatus
      */
     public function isRollBackOnly()
     {
-        $this->conn->isRollBackOnly();
+        return $this->manager->getConnection()->isRollBackOnly();
     }
 
     /**
@@ -61,7 +58,7 @@ class DBALTransactionStatus implements TransactionStatus
      */
     public function setRollBackOnly()
     {
-        $this->conn->setRollBackOnly(true);
+        return $this->manager->getConnection()->setRollBackOnly(True);
     }
 
     /**
@@ -71,12 +68,17 @@ class DBALTransactionStatus implements TransactionStatus
      */
     public function isCompleted()
     {
-        return $this->completed;
+        return $this->isCompleted;
     }
 
+    /**
+     * Return the connection object that is wrapped in this status.
+     *
+     * @return object
+     */
     public function getWrappedConnection()
     {
-        return $this->conn;
+        return $this->manager;
     }
 
     /**
@@ -84,7 +86,7 @@ class DBALTransactionStatus implements TransactionStatus
      */
     public function beginTransaction()
     {
-        $this->conn->beginTransaction();
+        $this->manager->beginTransaction();
     }
 
     /**
@@ -104,8 +106,12 @@ class DBALTransactionStatus implements TransactionStatus
             return $this->rollBack();
         }
 
-        $this->conn->commit();
-        if (0 === $this->conn->getTransactionNestingLevel()) {
+        if ( ! $this->isRollBackOnly() && $this->manager->getConnection()->getTransactionNestingLevel() == 1) {
+            $this->manager->flush();
+        }
+        $this->manager->commit();
+
+        if ($this->manager->getConnection()->getTransactionNestingLevel() == 0) {
             $this->completed = true;
         }
     }
@@ -117,8 +123,8 @@ class DBALTransactionStatus implements TransactionStatus
      */
     public function rollBack()
     {
-        $this->conn->rollBack();
-        if (0 === $this->conn->getTransactionNestingLevel()) {
+        $this->manager->rollBack();
+        if ($this->manager->getConnection()->getTransactionNestingLevel() == 0) {
             $this->completed = true;
         }
     }

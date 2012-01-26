@@ -11,46 +11,48 @@ See at the end of this document.
 ## Problem
 
 Symfony2 allows to nest controllers into each other in unlimited amounts. These controllers can all modify and save
-data, probably with different transactional needs. The Doctrine persistence solutions (ORM, MongoDB, CouchDB) use a transactional write-behind
+data. The Doctrine persistence solutions (ORM, MongoDB, CouchDB) use a transactional write-behind
 mechanism to flush changes in batches, best executed at the end of the master request. If each controller
 or model service handles transactions themselves then you probably overuse the flush operation, which
 can lead to inconsistencies and performance penalities.
 
-These flushes should not be executed in the model/services but should be handled by the controller layer, because it knows when all operations are done.
+Transaction management should by seperated from your domain model, handled by the framework in a HTTP context.
 
 ## How it works
 
 For every Doctrine DBAL connection, every EntityManager and every DocumentManager the Transactional Bundle
-creates a service that implements a transactions manager interface:
+creates a service that implements a transactions provider interface:
 
-    interface TransactionManagerInterface
+    interface TransactionProviderInterface
     {
-        function getTransaction(TransactionDefinition $def);
-        function commit(TransactionStatus $status);
-        function rollBack(TransactionStatus $status);
+        /**
+         * @return TransactionStatus
+         */
+        function createTransaction(TransactionDefinition $def);
     }
 
 With the transactional bundle the following workflow is applied to an action that is marked
 as transactional (by default always if POST, PUT, DELETE, PATCH request is found).
 
-0. Detect which Transaction Manager(s) should wrap the to-be-excecuted action.
-1. A transaction is started before the controller is called.
-2. The controller execution is wrapped in a try-catch block
-3. On successful response generation (status code < 400) the transaction is committed. This includes a call to EntityManager::flush or DocumentManager::flush in case of an orm, mongodb or couchdb "transaction".
-4. On status-code >= 400 the transaction is rolled back.
-5. If an exception is thrown the transaction is rolled back.
-
-Each transaction manager is named like the manager it belongs to:
-
-    doctrine.orm.default_entity_manager => simplethings_tx.orm.default
-    doctrine_mongodb.odm.default_document_manager => simplethings_tx.mongodb.default
-    doctrine_couchdb.odm.default_document_manager => simplethings_tx.couchdb.default
+1. Detect which Connection should wrap the to-be-excecuted action and if its read/write or read-only.
+2. A transaction is started before the controller is called.
+3. The action is called by Symfony
+4. On successful response generation (status code < 400) the transaction is committed. This includes a call to EntityManager::flush or DocumentManager::flush in case of an orm, mongodb or couchdb "transaction".
+5. On status-code >= 400 the transaction is rolled back.
+6. If an exception is thrown the transaction is rolled back.
 
 You can mark actions as transactional by means of configuration. There are three different ways to configure the transactional behavior:
 
-### Working with a default transaction manager
+### Architectural Details
 
-If you have a small RESTful application and you only use one transactional manager, for example the Doctrine ORM then your configuration
+1. There is only exactly one transaction per action. This bundle will not automatically handle transactions across multiple data-source as this is a very implementation specific problem. If you need multiple connections handle one transaction in your application then implement your own transaction provider that implements some kind of two-phase commit.
+2. A form extension is provided that will mark a transaction as rollback only validation on the form fails.
+3. Transactions are either read/write or read-only. A read-only transaction is rolled back at the end of the request no matter what. In the context of ObjectMAnagers this means the flush operation is NOT called. The read/write or read-only status is detected by matching against the HTTP Verbs. By default GET requests are read-only and PUT, POST, DELETE and PATCH are read/write transactions.
+4. If the read-only/read-write status switches during a sub-request an exception is thrown. Modes cannot be mixed.
+
+### Auto-Transactional Mode
+
+If you have a RESTful application and you only use one transactional manager, for example the Doctrine ORM then your configuration
 is as simple as configuring the transactional managers name in the app/config/config.yml extension configuration:
 
     simple_things_transactional:
@@ -79,14 +81,10 @@ If a transaction is started for a connection multiple times then an exception is
             fos_user:
                 pattern: "FOS\(.*)Controller::(.*)Action"
                 # not giving conn: uses the default
-                propagation: REQUIRES_NEW
-                noRollbackFor: ["NotFoundHttpException"]
             acme:
                 pattern: "Acme(.*)"
-                conn: "orm.default"
             acme_logging:
                 pattern: "Acme\DemoBundle\Controller\IndexController::logAction"
-                isolation: READ_UNCOMMITTED
                 conn: "orm.other"
                 methods: ["GET"]
 
@@ -110,7 +108,7 @@ The previous  `Acme\DemoBundle\Controller\IndexController` can then be configure
     {
         public function indexAction()
         {
-
+            // orm.default transaction here
         }
 
         /**
@@ -118,7 +116,7 @@ The previous  `Acme\DemoBundle\Controller\IndexController` can then be configure
          */
         public function demoAction()
         {
-            // both orm.default and orm.other are transactions here
+            // orm.other transaction here
         }
     }
 
@@ -190,7 +188,3 @@ Here is the code:
 
         simple_things_transactional: ~
 
-## Todos
-
-* Implement Propagation
-* Implement Isolation

@@ -54,6 +54,8 @@ class HttpTransactionsListener
         }
 
         $status = $this->registry->getTransaction($definition);
+        $status->beginTransaction();
+
         $request->attributes->set('_transaction', $status);
 
         if ($status && $this->logger) {

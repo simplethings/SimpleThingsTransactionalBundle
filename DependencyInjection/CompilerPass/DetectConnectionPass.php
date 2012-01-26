@@ -21,57 +21,45 @@ use Symfony\Component\DependencyInjection\DefinitionDecorator;
 /**
  * Detects connections and registers the transaction manager services.
  */
-class DetectConnectionsPass implements CompilerPassInterface
+class DetectConnectionPass implements CompilerPassInterface
 {
     public function process(ContainerBuilder $builder)
     {
-/*        if ($builder->hasParameter('doctrine.connections')) {
+        if ($builder->hasParameter('doctrine.connections')) {
             foreach ($builder->getParameter('doctrine.connections') AS $alias => $service) {
                 $builder->setDefinition(
                     'simple_things_transactional.tx.dbal.'.$alias,
-                    new DefinitionDecorator('simple_things_transactional.manager.dbal')
+                    new DefinitionDecorator('simple_things_transactional.provider.dbal')
                 )->setArguments(array(new Reference($service)));
             }
         }
-*/
-        $connectionServices = array();
 
         if ($builder->hasParameter('doctrine.entity_managers')) {
             foreach ($builder->getParameter('doctrine.entity_managers') AS $alias => $service) {
-                $connectionServices[] = 'doctrine.orm.' . $alias . '_entity_manager';
-                $builder->setAlias(
-                    'simple_things_transactional.connections.orm.' . $alias,
-                    'doctrine.orm.' . $alias . '_entity_manager'
-                );
                 $builder->setDefinition(
                     'simple_things_transactional.tx.orm.'.$alias,
-                    new DefinitionDecorator('simple_things_transactional.manager.orm')
+                    new DefinitionDecorator('simple_things_transactional.provider.orm')
                 )->setArguments(array(new Reference('service_container')));
             }
         }
 
         if ($builder->hasParameter('doctrine_couchdb.document_managers')) {
             foreach ($builder->getParameter('doctrine_couchdb.document_managers') AS $alias => $service) {
-                $connectionServices[] = 'doctrine_couchdb.odm.' . $alias . '_document_manager';
-                $builder->setAlias('simple_things_transactional.connections.couchdb.' . $alias
                 $builder->setDefinition(
                     'simple_things_transactional.tx.couchdb.'.$alias,
-                    new DefinitionDecorator('simple_things_transactional.manager.object_manager')
+                    new DefinitionDecorator('simple_things_transactional.provider.object_manager')
                 )->setArguments(array(new Reference('service_container')));
             }
         }
 
         if ($builder->hasParameter('doctrine_mongodb.document_managers')) {
             foreach ($builder->getParameter('doctrine_mongodb.document_managers') AS $alias => $service) {
-                $connectionServices[] = 'doctrine_mongodb.odm.' . $alias . '_document_manager';
-                $builder->setAlias('simple_things_transactional.connections.mongodb.' . $alias
                 $builder->setDefinition(
                     'simple_things_transactional.tx.mongodb.'.$alias,
-                    new DefinitionDecorator('simple_things_transactional.manager.object_manager')
+                    new DefinitionDecorator('simple_things_transactional.provider.object_manager')
                 )->setArguments(array(new Reference('service_container')));
             }
         }
-        // add tags as well for external resources (Propel, raw-PDO whatever)
-        $container->setParameter('simple_things_transactional.connection_services', $connectionServices);
     }
 }
+

@@ -45,7 +45,6 @@ class TransactionsRegistry
             throw new \RuntimeException("Cannot switch from read-only to write/read-transaction or vice-versa.");
         }
 
-        $this->transactions[$connectionName]->beginTransaction();
         return $this->transactions[$connectionName];
     }
 
