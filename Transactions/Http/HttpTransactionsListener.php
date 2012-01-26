@@ -55,7 +55,6 @@ class HttpTransactionsListener
 
         $status = $this->registry->getTransaction($definition);
         $request->attributes->set('_transaction', $status);
-        $request->attributes->set('_transaction_def', $definition);
 
         if ($status && $this->logger) {
             $this->logger->info("[TransactionBundle] Started transaction for " . $definition->getConnectionName());
@@ -71,12 +70,11 @@ class HttpTransactionsListener
         if ($txStatus === null) {
             return;
         }
-        $txDef = $request->attributes->get('_transaction_def');
 
         if ($response->getStatusCode() >= 400 && $response->getStatusCode() != 404) {
-            $this->rollBack($txStatus, $txDef);
+            $this->rollBack($txStatus);
         } else {
-            $this->commit($txStatus, $txDef);
+            $this->commit($txStatus);
         }
     }
 
@@ -89,30 +87,29 @@ class HttpTransactionsListener
         if ($txStatus === null) {
             return;
         }
-        $txDef = $request->attributes->get('_transaction_def');
 
         if ($ex instanceof NotFoundHttpException) {
-            $this->registry->commit($txStatus);
+            $this->commit($txStatus);
         } else {
-            $this->registry->rollBack($txStatus);
+            $this->rollBack($txStatus);
         }
     }
 
-    private function commit($txStatus, $txDefinition)
+    private function commit($txStatus)
     {
         $this->registry->commit($txStatus);
 
         if ($this->logger) {
-            $this->logger->info("[TransactionBundle] Committed transaction for " . $txDefinition->getConnectionName());
+            $this->logger->info("[TransactionBundle] Committed transaction.");
         }
     }
 
-    private function rollBack($txStatus, $txDefinition)
+    private function rollBack($txStatus)
     {
         $this->registry->rollBack($txStatus);
 
         if ($this->logger) {
-            $this->logger->info("[TransactionBundle] Aborted transaction for " . $txDefinition->getConnectionName());
+            $this->logger->info("[TransactionBundle] Aborted transaction.");
         }
     }
 }

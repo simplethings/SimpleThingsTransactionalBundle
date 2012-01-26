@@ -64,7 +64,7 @@ class TransactionalKernelTest extends \PHPUnit_Framework_TestCase
 
         $this->assertEquals(array(
             "[TransactionBundle] Started transaction for dbal.default",
-            "[TransactionBundle] Committed transaction for dbal.default"
+            "[TransactionBundle] Committed transaction."
         ), $this->logger->logs);
     }
 
@@ -75,7 +75,7 @@ class TransactionalKernelTest extends \PHPUnit_Framework_TestCase
 
         $this->assertEquals(array(
             "[TransactionBundle] Started transaction for dbal.default",
-            "[TransactionBundle] Committed transaction for dbal.default"
+            "[TransactionBundle] Committed transaction."
         ), $this->logger->logs);
     }
 }

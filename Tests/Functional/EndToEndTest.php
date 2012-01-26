@@ -92,8 +92,8 @@ class EndToEndTest extends \PHPUnit_Framework_TestCase
         $this->assertEquals(array(
             "[TransactionBundle] Started transaction for dbal.default",
             "[TransactionBundle] Started transaction for dbal.default",
-            "[TransactionBundle] Committed transaction for dbal.default",
-            "[TransactionBundle] Committed transaction for dbal.default"
+            "[TransactionBundle] Committed transaction.",
+            "[TransactionBundle] Committed transaction."
         ), $this->logger->logs);
 
         $this->assertEquals(0, count($this->conn->fetchAll("SELECT * FROM testdata")));
@@ -107,8 +107,8 @@ class EndToEndTest extends \PHPUnit_Framework_TestCase
         $this->assertEquals(array(
             "[TransactionBundle] Started transaction for dbal.default",
             "[TransactionBundle] Started transaction for dbal.default",
-            "[TransactionBundle] Committed transaction for dbal.default",
-            "[TransactionBundle] Committed transaction for dbal.default"
+            "[TransactionBundle] Committed transaction.",
+            "[TransactionBundle] Committed transaction."
         ), $this->logger->logs);
 
         $this->assertEquals(2, count($this->conn->fetchAll("SELECT * FROM testdata")));
