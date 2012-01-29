@@ -11,7 +11,7 @@
  * to kontakt@beberlei.de so I can send you a copy immediately.
  */
 
-namespace SimpleThingsTransactionalBundle\Doctrine;
+namespace SimpleThings\TransactionalBundle\Doctrine;
 
 use SimpleThings\TransactionalBundle\Transactions\TransactionStatus;
 use SimpleThings\TransactionalBundle\Transactions\TransactionDefinition;
@@ -21,18 +21,14 @@ class ObjectTransactionStatus implements TransactionStatus
 {
     private $def;
     private $manager;
-    private $rollbackOnly = false;
+    private $rollBackOnly = false;
     private $completed = false;
+    private $nestingLevel = 0;
 
     public function __construct(ObjectManager $manager, TransactionDefinition $def)
     {
         $this->manager = $manager;
         $this->def = $def;
-    }
-
-    public function getIsolationLevel()
-    {
-        return $this->def->getIsolationLevel();
     }
 
     /**
@@ -46,7 +42,7 @@ class ObjectTransactionStatus implements TransactionStatus
      */
     public function isReadOnly()
     {
-        return $this->def->getReadOnly();
+        return $this->def->isReadOnly();
     }
 
     /**
@@ -56,7 +52,7 @@ class ObjectTransactionStatus implements TransactionStatus
      */
     public function isRollBackOnly()
     {
-        return $this->rollbackOnly;
+        return $this->rollBackOnly;
     }
 
     /**
@@ -66,7 +62,7 @@ class ObjectTransactionStatus implements TransactionStatus
      */
     public function setRollBackOnly()
     {
-        $this->rollbackOnly = true;
+        $this->rollBackOnly = true;
     }
 
     /**
@@ -76,27 +72,65 @@ class ObjectTransactionStatus implements TransactionStatus
      */
     public function isCompleted()
     {
-        return $this->completed;
+        return $this->isCompleted;
     }
 
     /**
-     * Check if this transaction has savepoints.
+     * Return the connection object that is wrapped in this status.
      *
-     * @return bool
+     * @return object
      */
-    public function hasSavepoint()
-    {
-        return false;
-    }
-
     public function getWrappedConnection()
     {
         return $this->manager;
     }
 
-    public function markCompleted()
+    /**
+     * Begin the transaction
+     */
+    public function beginTransaction()
     {
-        $this->completed = true;
+        $this->nestingLevel++;
+    }
+
+    /**
+     * Commit the transaction
+     *
+     * Depending on the Transaction#isRollBackOnly status this method commits
+     * or rollbacks the transaction wrapped inside the status. If an error
+     * happens during commit the original exception of the underlying
+     * connection is thrown from this method.
+     *
+     * @throws Exception
+     * @return void
+     */
+    public function commit()
+    {
+        if ( ! $this->isReadOnly() && ! $this->isRollBackOnly() && $this->nestingLevel === 1) {
+            $this->manager->flush();
+        }
+        $this->decreateNestingLevel();
+    }
+
+    private function decreateNestingLevel()
+    {
+        $this->nestingLevel--;
+
+        if ($this->nestingLevel === 0) {
+            $this->completed = true;
+        }
+    }
+
+    /**
+     * Rollback the transaction inside the status object.
+     *
+     * @return void
+     */
+    public function rollBack()
+    {
+        $this->manager->clear();
+        $this->rollBackOnly = true;
+        $this->decreateNestingLevel();
     }
 }
 

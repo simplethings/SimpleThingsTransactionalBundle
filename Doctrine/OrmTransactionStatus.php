@@ -11,8 +11,10 @@
  * to kontakt@beberlei.de so I can send you a copy immediately.
  */
 
-namespace SimpleThingsTransactionalBundle\Doctrine;
+namespace SimpleThings\TransactionalBundle\Doctrine;
 
+use SimpleThings\TransactionalBundle\Transactions\TransactionStatus;
+use SimpleThings\TransactionalBundle\Transactions\TransactionDefinition;
 use Doctrine\ORM\EntityManager;
 
 class OrmTransactionStatus implements TransactionStatus
@@ -21,7 +23,7 @@ class OrmTransactionStatus implements TransactionStatus
     private $manager;
     private $completed = false;
 
-    public function __construct(EntityManager $conn, TransactionDefinition $def)
+    public function __construct(EntityManager $manager, TransactionDefinition $def)
     {
         $this->manager = $manager;
         $this->def = $def;

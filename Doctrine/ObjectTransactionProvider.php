@@ -13,10 +13,14 @@
 
 namespace SimpleThings\TransactionalBundle\Doctrine;
 
-use SimpleThings\TransactionalBundle\Transactions\TransactionProviderInterface;
+use SimpleThings\TransactionalBundle\Transactions\TransactionStatus;
 use SimpleThings\TransactionalBundle\Transactions\TransactionDefinition;
+use SimpleThings\TransactionalBundle\Transactions\TransactionProviderInterface;
 
-class OrmTransactionProvider implements TransactionProviderInterface
+/**
+ * Doctrine ObjectManager TransactionProvider
+ */
+class ObjectTransactionProvider implements TransactionProviderInterface
 {
     protected $container;
 
@@ -27,7 +31,8 @@ class OrmTransactionProvider implements TransactionProviderInterface
 
     public function createTransaction(TransactionDefinition $def)
     {
-        $manager = $this->container->get('doctrine.' . $def->getConnectionName().'_entity_manager');
-        return new OrmTransactionStatus($manager, $def);
+        $conn = $this->container->get('doctrine.' . $def->getConnectionName() . '_manager');
+        return new ObjectTransactionStatus($conn, $def);
     }
 }
+

@@ -18,13 +18,7 @@ use SimpleThings\TransactionalBundle\Transactions\TransactionDefinition;
 use SimpleThings\TransactionalBundle\Transactions\TransactionProviderInterface;
 
 /**
- * Doctrine Object TransactionManager for any Doctrine ObjectManager.
- *
- * The commit operation of this manager directly translates to the flush
- * operation of the Object Manager, synchronizing any pending changes to the
- * database. Creating a new transaction when one already exists translates to
- * resetting the service and reconstituting the "previous" manager when the
- * transaction is committed or rolled back.
+ * Doctrine DBAL Transaction Provider
  */
 class DBALTransactionProvider implements TransactionProviderInterface
 {
