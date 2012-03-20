@@ -70,7 +70,7 @@ class OrmTransactionStatus implements TransactionStatus
      */
     public function isCompleted()
     {
-        return $this->isCompleted;
+        return $this->completed;
     }
 
     /**
