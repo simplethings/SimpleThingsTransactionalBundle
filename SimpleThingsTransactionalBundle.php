@@ -16,7 +16,7 @@ namespace SimpleThings\TransactionalBundle;
 
 use Symfony\Component\HttpKernel\Bundle\Bundle;
 use Symfony\Component\DependencyInjection\ContainerBuilder;
-use SimpleThings\TransactionalBundle\DependencyInjection\CompilerPass\DetectConnectionsPass;
+use SimpleThings\TransactionalBundle\DependencyInjection\CompilerPass\DetectConnectionPass;
 
 class SimpleThingsTransactionalBundle extends Bundle
 {
@@ -24,6 +24,6 @@ class SimpleThingsTransactionalBundle extends Bundle
     {
         parent::build($container);
 
-        $container->addCompilerPass(new DetectConnectionsPass());
+        $container->addCompilerPass(new DetectConnectionPass());
     }
 }
