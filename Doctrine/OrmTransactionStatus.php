@@ -110,8 +110,8 @@ class OrmTransactionStatus implements TransactionStatus
 
         if ( ! $this->isRollBackOnly() && $this->manager->getConnection()->getTransactionNestingLevel() == 1) {
             $this->manager->flush();
+            $this->manager->getConnection()->commit();
         }
-        $this->manager->commit();
 
         if ($this->manager->getConnection()->getTransactionNestingLevel() == 0) {
             $this->completed = true;
