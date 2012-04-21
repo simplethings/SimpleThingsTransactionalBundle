@@ -11,10 +11,10 @@
  * to kontakt@beberlei.de so I can send you a copy immediately.
  */
 
-namespace SimpleThingsTransactionalBundle\Transactions\Form;
+namespace SimpleThings\TransactionalBundle\Transactions\Form;
 
 use Symfony\Component\Form\FormValidatorInterface;
-use Symfony\Component\Form\Form;
+use Symfony\Component\Form\FormInterface;
 
 /**
  * "Missusing" the FormValidator to set transactions to rollback only when the validation failed.
@@ -39,7 +39,7 @@ class RollbackInvalidFormValidator implements FormValidatorInterface
         }
 
         $request = $this->container->get('request');
-        if ( ! $form->isValid( && $request->attributes->has('_transaction') ) {
+        if ( ! $form->isValid() && $request->attributes->has('_transaction') ) {
             $request->attributes->get('_transaction')->setRollBackOnly(true);
         }
     }
