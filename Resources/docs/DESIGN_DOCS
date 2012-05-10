@@ -1,0 +1,97 @@
+Design Document: Transaction Management in Symfony
+==================================================
+
+Symfony is a HTTP-framework. The framework transaction management should be based
+on this request/response semantic. A transaction should be opened for every request
+and committed when the response is sent and no error occured. Currently Symfony does
+not handle transactions at all, leaving this to the developer.
+
+HTTP Transaction Management
+---------------------------
+
+A transaction for all involved database resources of a controller should be started
+in the kernel controller event. The kernel.response and kernel.exception events handle
+successes and errors respectively. Different types of exceptions should either lead to
+commit or rollback of the transaction.
+
+Since Symfony supports sub-requests we have to decide how to handle subrequests:
+
+1. Re-use existing transaction scope. If the subrequest transaction fails the
+   parent requests transaction is rolled back as well.
+
+   This is useful for subrequests that are either not failing by design or
+   that explicitly should rollback the parent transactions as well.
+
+2. Don't care about transactions (re-use existing, or don't open a transaction)
+   This is useful for view slots (render) that only need the database for read access.
+
+3. Start their own sub-transaction. This poses several problems: The existing transactional
+   service could already be injected into several services that are container scoped and could be
+   resused in the action that "requires new" transaction. Additionally we have to handle
+   the transaction stack and "suspend" and "resume" transactions correctly.
+
+   This type is useful if subrequests do data-manipulation that should never affect other transactions,
+   or if several subrequests are started (slots) that should run independently of each other.
+
+4. Manually
+
+   No Transaction should be started already and the user wants to manually handle all the transactions.
+   This is the current Symfony default (with no support for transactions). It is however sometimes necessary
+   in complex scenarios to manually handle transactions.
+
+New Transaction in Sub-Requests
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+Staring new transactions in sub-requests creates a bunch of problems that have to be solved:
+
+1. How to guarantee that all services in the sub-request contain references to the connection
+   with the new transaction?
+2. How to suspend and resume the previous transaction if the sub-request is completed.
+
+First we have to evaluate what we want from this feature:
+
+1. Independence of sub-request transactions from any other sources. The sub-request has to complete or rollback alone.
+2. Independence of the parent requests from the sub-request, which maybe unstable with regard to tranaction success.
+
+In short: A REQUIRES_NEW transaction should behave as if it were a master-request. No effects of the transaction should
+be visible outside of it.
+
+Solution 1: Transactional Scope
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+We may need a container scope "transactional" for this. Problems with this are:
+
+* Say service X is used in the REQUIRES_NEW controller. Then it has to be marked as "transactional" scope.
+* If it depends on any connection these have to be marked as "transactional" too.
+* Every service depending on any connection is then required to be "transactional".
+
+How can we break up this problem from point 2 to 3? We want services to be container scoped by default.
+
+Problems:
+
+* We have to automatically implicitly move all services depending on connections from container to transactional scope.
+* Transaction scope has to be the parent of request scope.
+
+Solution 2: Connection Proxies
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+Each connection is a proxy to the real connection and returns the right/new connection.
+
+Combined Transactions
+---------------------
+
+What if one controller requires a transaction for several different resources.
+
+* Do commits have to be synchronized? (Two-phase commit) - This is very complex
+* Do rollbacks have to be synchronized (if one is isRollbackOnly, all others rollback as well)
+
+For the beginning I would say that transactions can fail and commit independently.
+
+If a user requires synchronization then he should implement his own transaction manager and
+implement two-phase-commit manually.
+
+Read Only
+---------
+
+Transactions are bound to the HTTP Verb semantics. By default GET requests create Read-Only transactions.
+Read-only transactions never commit at the end of the response/transaction cycle.

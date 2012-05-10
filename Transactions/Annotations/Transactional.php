@@ -12,10 +12,9 @@
  * to kontakt@beberlei.de so I can send you a copy immediately.
  */
 
-namespace SimpleThings\TransactionalBundle\Annotations;
+namespace SimpleThings\TransactionalBundle\Transactions\Annotations;
 
 use Doctrine\Common\Annotations\Annotation;
-use SimpleThings\TransactionalBundle\Transactions\TransactionDefinition;
 
 /**
  * @Annotation
@@ -23,17 +22,9 @@ use SimpleThings\TransactionalBundle\Transactions\TransactionDefinition;
 class Transactional extends Annotation
 {
     /**
-     * @var array
+     * @var string
      */
     public $conn = null;
-    /**
-     * @var int
-     */
-    public $propagation = null;
-    /**
-     * @var int
-     */
-    public $isolation = null;
     /**
      * @var array
      */
@@ -42,9 +33,5 @@ class Transactional extends Annotation
      * @var array
      */
     public $methods = null;
-
-    /**
-     * @var bool
-     */
-    public $subrequest = null;
 }
+

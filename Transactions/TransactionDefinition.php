@@ -14,48 +14,62 @@
 
 namespace SimpleThings\TransactionalBundle\Transactions;
 
+/**
+ * Describes the properties of a transaction
+ *
+ * @author Benjamin Eberlei <kontakt@beberlei.de>
+ */
 class TransactionDefinition
 {
-    const PROPAGATION_SUPPORTS = 1;
-    const PROPAGATION_REQUIRED = 2;
-    const PROPAGATION_REQUIRES_NEW = 3;
-    const PROPAGATION_NEVER = 4;
+    /**
+     * @var string
+     */
+    private $connectionName;
 
-    const ISOLATION_DEFAULT = 0;
-    const ISOLATION_READ_UNCOMMITTED = 1;
-    const ISOLATION_READ_COMMITTED = 2;
-    const ISOLATION_REPEATABLE_READ = 3;
-    const ISOLATION_SERIALIZABLE = 4;
+    /**
+     * @var bool
+     */
+    private $readOnly;
 
-    private $connections = array();
+    /**
+     * @var array
+     */
+    private $noRollbackFor = array();
 
-    public function __construct(array $connections)
+    public function __construct($connectionName, $readOnly = false, $noRollbackFor = array())
     {
-        return $this->connections = $connections;
+        $this->connectionName = $connectionName;
+        $this->readOnly = (bool)$readOnly;
+        $this->noRollbackFor = $noRollbackFor;
     }
 
-    public function getConnections()
+    /**
+     * Get readOnly.
+     *
+     * @return readOnly.
+     */
+    public function isReadOnly()
     {
-        return array_keys($this->connections);
+        return $this->readOnly;
     }
 
-    public function getIsolationLevel($connection)
+    /**
+     * Get connectionName.
+     *
+     * @return string
+     */
+    public function getConnectionName()
     {
-        return $this->connections[$connection]['isolation'];
+        return $this->connectionName;
     }
 
-    public function getPropagation($connection)
+    /**
+     * Get noRollbackFor.
+     *
+     * @return noRollbackFor.
+     */
+    public function getNoRollbackFor()
     {
-        return $this->connections[$connection]['propagation'];
-    }
-
-    public function getNoRollbackFor($connection)
-    {
-        return $this->connections[$connection]['noRollbackFor'];
-    }
-
-    public function isInvokedOnSubrequest($connection)
-    {
-        return $this->connections[$connection]['subrequest'];
+        return $this->noRollbackFor;
     }
 }

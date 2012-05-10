@@ -15,15 +15,20 @@ namespace SimpleThings\TransactionalBundle\Transactions;
 
 /**
  * Wraps a transactional service into a common interface
- * 
+ *
  * @author Benjamin Eberlei <kontakt@beberlei.de>
  */
-interface TransactionManagerInterface
+interface TransactionProviderInterface
 {
-
-    function beginTransaction();
-
-    function commit();
-
-    function rollBack();
+    /**
+     * Get a transaction status object.
+     *
+     * Re-use an existing transaction status if there is already one for the
+     * currently active transaction. Throw an exception if the read-only status
+     * is not equal for the previously defined transaction.
+     *
+     * @param TransactionDefinition $def
+     * @return TransactionStatus
+     */
+    function createTransaction(TransactionDefinition $def);
 }
