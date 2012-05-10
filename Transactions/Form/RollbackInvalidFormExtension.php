@@ -15,13 +15,19 @@ namespace SimpleThings\TransactionalBundle\Transactions\Form;
 
 use Symfony\Component\Form\AbstractTypeExtension;
 use Symfony\Component\Form\FormBuilder;
-use Symfony\Component\Form\AbstractExtension;
 
-class RollbackInvalidFormExtension extends AbstractExtension
+class RollbackInvalidFormExtension extends AbstractTypeExtension
 {
+    private $validator;
+
+    public function __construct(RollbackInvalidFormValidator $rollbackValidator)
+    {
+        $this->validator = $rollbackValidator;
+    }
+
     public function buildForm(FormBuilder $builder, array $options)
     {
-        $builder->addValidator(new RollbackInvalidFormValidator());
+        $builder->addValidator($this->validator);
     }
 
     public function getExtendedType()

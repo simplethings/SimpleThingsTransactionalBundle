@@ -35,7 +35,12 @@
             <argument type="collection" />
         </service>
 
+        <service id="simple_things_transactional.form_validator" class="SimpleThings\TransactionalBundle\Transactions\Form\RollbackInvalidFormValidator" public="false">
+            <argument type="service" id="service_container" />
+        </service>
+
         <service id="simple_things_transactional.form_extension" class="SimpleThings\TransactionalBundle\Transactions\Form\RollbackInvalidFormExtension">
+            <argument type="service" id="simple_things_transactional.form_validator" />
             <tag name="form.type_extension" alias="form" />
         </service>
     </services>
