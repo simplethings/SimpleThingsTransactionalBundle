@@ -122,6 +122,9 @@ The previous  `Acme\DemoBundle\Controller\IndexController` then looks like:
 
 Using the previous routes as example here is a sample action that does not require any calls to EntityManager::flush anymore.
 
+    use Symfony\Bundle\FrameworkBundle\Controller\Controller;
+    use Symfony\Component\HttpFoundation\Request;
+
     class PostController extends Controller
     {
         public function editAction(Request $request, $id)
