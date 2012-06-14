@@ -124,12 +124,12 @@ Using the previous routes as example here is a sample action that does not requi
 
     class PostController extends Controller
     {
-        public function editAction($id)
+        public function editAction(Request $request, $id)
         {
-            $em = $this->container->get('doctrine.orm.default_entity_manager');
+            $em = $this->container->get('doctrine')->getManager();
             $post = $em->find('Post', $id);
 
-            if ($this->container->get('request')->getMethod() == 'POST') {
+            if ($request->isMethod('post')) {
                 $post->modifyState();
                 // no need to call $em->flush(), the flush is executed in a transactional wrapper
 
