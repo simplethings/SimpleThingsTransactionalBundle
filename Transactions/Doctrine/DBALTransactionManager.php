@@ -22,7 +22,7 @@ use SimpleThings\TransactionalBundle\Transactions\TransactionManagerInterface;
  * 
  * @author Benjamin Eberlei
  */
-class DoctrineDBALTransactionManager implements TransactionManagerInterface
+class DBALTransactionManager implements TransactionManagerInterface
 {
     private $conn;
     
