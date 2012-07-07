@@ -1,3 +1,6 @@
+Bundle is **deprecated** in favor of [Context Engine](https://github.com/beberlei/context)
+which wraps the model layer inside Transactions independent from the framework, offering much more flexibility.
+
 # SimpleThings TransactionalBundle
 
 Wraps calls to controllers into a transaction, be it Doctrine DBAL or Persistence Managers (ORM, MongoDB, CouchDB).
