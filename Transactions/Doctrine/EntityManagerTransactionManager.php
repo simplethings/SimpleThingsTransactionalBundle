@@ -21,7 +21,7 @@ class EntityManagerTransactionManager implements TransactionManagerInterface
 {
     private $doctrineRegistry;
     private $name;
-    
+
     public function __construct(Registry $doctrineRegistry, $name)
     {
         $this->doctrineRegistry = $doctrineRegistry;
@@ -43,6 +43,6 @@ class EntityManagerTransactionManager implements TransactionManagerInterface
     public function rollBack()
     {
         $this->doctrineRegistry->getManager($this->name)->rollback();
-        $this->doctrineRegistry->resetEntityManager($this->name);
+        $this->doctrineRegistry->resetManager($this->name);
     }
 }
