@@ -113,7 +113,7 @@ class TransactionalMatcher
             $annotData = array_merge($this->defaults, array_filter((array)$txAnnot, function($v) { return $v !== null; }));
 
             if (in_array($method, $annotData['methods'])) {
-                $this->storeMatch($connections, $annotData);
+                $this->storeMatch($subject, $method, $annotData);
             }
         }
 

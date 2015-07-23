@@ -14,7 +14,7 @@
 
 namespace SimpleThings\TransactionalBundle\Controller;
 
-use Symfony\Bundle\FrameworkBundle\Controller\TraceableControllerResolver as BaseControllerResolver;
+use Symfony\Component\HttpKernel\Controller\TraceableControllerResolver as BaseControllerResolver;
 use Symfony\Component\HttpFoundation\Request;
 
 class TraceableControllerResolver extends BaseControllerResolver
